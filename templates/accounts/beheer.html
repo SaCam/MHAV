@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Beheer | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/mhav-beheer.css">{% endblock %}
+{% block content %}
+<section class="page-intro"><div class="container"><span class="eyebrow">MHAV · WEBSITEBEHEER</span><h1>Beheer</h1><p>Beheer de vereniging vanuit de vertrouwde MHAV-omgeving.</p></div></section>
+<section class="section"><div class="container"><div class="mhav-manage-grid">
+{% if user.is_superuser %}<a class="mhav-manage-card" href="{% url 'accounts:beheer_users' %}"><span class="mhav-manage-icon">♙</span><h2>Gebruikers & rechten</h2><p>Bekijk accounts, keur leden goed en bepaal wie trainer is of de website mag aanpassen.</p><strong>{{ user_count }} accounts · {{ pending_count }} wachten op goedkeuring →</strong></a>{% endif %}
+<a class="mhav-manage-card" href="{% url 'website:home' %}"><span class="mhav-manage-icon">✎</span><h2>Website bewerken</h2><p>Open de pagina en gebruik de bewerkknoppen bij de afzonderlijke secties.</p><strong>Ga naar homepage →</strong></a>
+{% if perms.website.change_sitepage or perms.website.add_sitepage %}<a class="mhav-manage-card" href="{% url 'website:course_manage' %}"><span class="mhav-manage-icon">▤</span><h2>Cursussen beheren</h2><p>Voeg cursussen toe en beheer hun inhoud en zichtbaarheid.</p><strong>Beheer cursussen →</strong></a>{% endif %}
+</div></div></section>
+{% endblock %}

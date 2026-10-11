@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Gebruiker bewerken | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/mhav-beheer.css">{% endblock %}
+{% block content %}
+<section class="page-intro"><div class="container"><a class="text-link" href="{% url 'accounts:beheer_users' %}">← Terug naar gebruikers</a><h1>{{ target.get_full_name|default:target.username }}</h1><p>Accountgegevens, lidmaatschap en toegangsrechten.</p></div></section>
+<section class="section"><div class="container"><form class="mhav-editor" method="post">{% csrf_token %}
+{% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+<h2>Accountgegevens</h2><div class="mhav-fields">{% for field in form %}{% if field.name == 'first_name' or field.name == 'last_name' or field.name == 'email' %}<div class="form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}</div>
+<h2>Toegang en rollen</h2><p class="mhav-note">Website bewerken geeft toegang tot de inhoud van de website, niet tot het beheren van gebruikers. Trainer is alvast een aparte rol voor toekomstige trainerfuncties.</p>
+{% for field in form %}{% if field.name == 'is_active' or field.name == 'is_approved' or field.name == 'role_member' or field.name == 'role_trainer' or field.name == 'role_editor' %}<label class="mhav-toggle">{{ field }}<span><strong>{{ field.label }}</strong>{% if field.name == 'is_active' %}<small>Mag inloggen op MHAV</small>{% elif field.name == 'is_approved' %}<small>Toegang als goedgekeurd lid</small>{% elif field.name == 'role_editor' %}<small>Mag websitepagina's, foto's, cursussen en nieuws bewerken</small>{% endif %}</span></label>{{ field.errors }}{% endif %}{% endfor %}
+<div class="mhav-actions"><a class="button button-outline" href="{% url 'accounts:beheer_users' %}">Annuleren</a><button class="button button-primary" type="submit">Wijzigingen opslaan</button></div>
+</form></div></section>
+{% endblock %}

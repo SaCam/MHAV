@@ -1,0 +1,10 @@
+<section class="mhav-section-hero"><div class="container mhav-section-layout">
+  <div class="mhav-section-intro"><span class="eyebrow">{{ eyebrow }}</span><h1>{{ title }}</h1><p>{{ lead }}</p>
+    <a class="button button-primary" href="{% url 'website:contact' %}">Stel ons een vraag ↗</a>
+  </div>
+  <div class="mhav-section-photo">
+    {% if photo.image %}<img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:title }}">{% else %}
+    <div class="mhav-photo-placeholder"><span aria-hidden="true">✦</span><strong>Samen met je hond</strong><small>Foto binnenkort beschikbaar</small></div>
+    {% endif %}
+  </div>
+</div></section>

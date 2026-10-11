@@ -1,0 +1,5 @@
+<article class="info-card">
+  <span class="info-card-number">{{ forloop.counter|stringformat:"02d" }}</span>
+  <h3>{{ page.title }}</h3><p>{{ page.introduction }}</p>
+  <a class="text-link" href="{% url 'website:page' page.slug %}">Lees verder →</a>
+</article>

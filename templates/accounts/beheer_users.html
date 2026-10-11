@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Gebruikers beheren | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/mhav-beheer.css">{% endblock %}
+{% block content %}
+<section class="page-intro"><div class="container"><a class="text-link" href="{% url 'accounts:beheer' %}">← Terug naar beheer</a><h1>Gebruikers & rechten</h1><p>Nieuwe accounts zijn niet automatisch goedgekeurd als lid.</p></div></section>
+<section class="section"><div class="container"><form class="mhav-search" method="get"><label for="user-query">Zoek een gebruiker</label><input id="user-query" name="q" value="{{ query }}" placeholder="Naam, gebruikersnaam of e-mail"><button class="button button-primary">Zoeken</button></form>
+<div class="mhav-user-list">{% for account in users %}<div class="mhav-user-row"><div><strong>{{ account.get_full_name|default:account.username }}</strong><p>{{ account.username }} · {{ account.email }}</p><small>{% if account.is_superuser %}Superuser{% elif account.member_profile.is_approved %}Lid goedgekeurd{% else %}Lidmaatschap in afwachting{% endif %}{% if not account.is_active %} · Inactief{% endif %}</small></div>{% if not account.is_superuser %}<a class="button button-outline" href="{% url 'accounts:beheer_user_edit' account.pk %}">Rechten aanpassen</a>{% endif %}</div>{% empty %}<p>Geen gebruikers gevonden.</p>{% endfor %}</div>
+<p class="mhav-note">Er worden maximaal 200 gebruikers getoond. Gebruik de zoekfunctie om iemand anders te vinden.</p></div></section>
+{% endblock %}

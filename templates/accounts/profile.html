@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Mijn profiel | MHAV{% endblock %}
+{% block content %}<section class="page-intro"><div class="container"><h1>Mijn profiel</h1></div></section><section class="section"><div class="container"><form method="post" class="content-form">{% csrf_token %}{{ form.as_p }}<button class="button button-primary" type="submit">Opslaan</button></form></div></section>{% endblock %}
