@@ -1,0 +1,157 @@
+/* MHAV News: responsive reusable page components */
+.page-intro {
+    background:var(--cream);
+    padding:78px 0 70px
+}
+
+.page-intro h1,.article-layout h1 {
+    font-family:Manrope,sans-serif;
+    font-size:clamp(36px,5vw,60px);
+    line-height:1.15;
+    letter-spacing:-2px;
+    color:var(--forest);
+    margin:16px 0
+}
+
+.page-intro p {
+    max-width:650px;
+    color:var(--muted);
+    line-height:1.8
+}
+
+.page-intro .text-link {
+    display:inline-block;
+    margin-top:14px
+}
+
+.news-card {
+    overflow:hidden
+}
+
+.news-card-image {
+    display:block;
+    width:100%;
+    height:220px;
+    border-radius:14px;
+    margin-bottom:20px;
+    object-fit:contain;
+    object-position:center;
+    background:var(--cream)
+}
+
+.news-card h2 {
+    font-family:Manrope,sans-serif;
+    font-size:21px;
+    line-height:1.35
+}
+
+.news-card .text-link {
+    display:inline-block;
+    margin-top:12px
+}
+
+.notice-strip {
+    margin-top:32px;
+    border-left:4px solid var(--leaf);
+    background:var(--cream);
+    padding:18px 24px;
+    border-radius:12px
+}
+
+.notice-strip h3 {
+    margin-top:0
+}
+
+.notice-strip p {
+    line-height:1.6
+}
+
+.article-layout {
+    max-width:800px;
+    padding-block:72px 100px
+}
+
+.article-layout .eyebrow {
+    display:block;
+    margin-top:32px
+}
+
+.article-lead {
+    font-size:19px;
+    line-height:1.8;
+    color:var(--muted)
+}
+
+.article-image {
+    display:block;
+    width:100%;
+    height:auto;
+    max-height:none;
+    object-fit:contain;
+    border-radius:22px;
+    margin:35px 0
+}
+
+.article-body {
+    font-size:16px;
+    line-height:1.95;
+    overflow-wrap:anywhere
+}
+
+.content-form {
+    max-width:680px;
+    background:var(--cream);
+    border-radius:22px;
+    padding:clamp(22px,4vw,42px)
+}
+
+.form-field {
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+    margin-bottom:22px
+}
+
+.form-field label {
+    font-weight:750;
+    color:var(--forest)
+}
+
+.form-field input,.form-field textarea {
+    width:100%;
+    border:1px solid #c9d6c7;
+    background:#fff;
+    border-radius:12px;
+    padding:14px;
+    font:inherit;
+    color:var(--ink)
+}
+
+.form-field input:focus,.form-field textarea:focus {
+    outline:3px solid #a9c9a0;
+    outline-offset:1px
+}
+
+.form-error {
+    color:#a12e2e;
+    font-weight:700
+}
+
+.news-card a:hover {
+    text-decoration:underline
+}
+
+@media(max-width:700px) {
+    .page-intro {
+        padding:48px 0
+    }
+    .article-layout {
+        padding-block:45px 65px
+    }
+    .article-lead {
+        font-size:16px
+    }
+    .news-card-image {
+        height:190px
+    }
+}
