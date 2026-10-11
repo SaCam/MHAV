@@ -8,6 +8,7 @@
   <meta name="description" content="Mijn Hond Als Vriend: samen leren, trainen en genieten met je hond.">
   <title>{% block title %}Mijn Hond Als Vriend{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/site.css' %}">
+  <link rel="stylesheet" href="{% static 'css/news.css' %}">
   <script src="{% static 'js/site.js' %}" defer></script>
 </head>
 <body>
@@ -17,16 +18,16 @@
       <a class="brand" href="{% url 'website:home' %}" aria-label="MHAV - naar startpagina"><span class="brand-mark" aria-hidden="true">✦</span><span><strong>Mijn Hond</strong><small>Als Vriend</small></span></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="Open navigatiemenu"><span></span><span></span><span></span></button>
       <nav id="main-navigation" class="main-nav" aria-label="Hoofdnavigatie">
-        <a href="{% url 'website:home' %}" aria-current="page">Home</a>
-        <a href="#over-ons">Over ons</a>
-        <a href="#training">Trainingen</a>
-        <a href="#nieuws">Nieuws</a>
-        <a href="#contact">Contact</a>
-        {% if user.is_authenticated %}<a class="nav-login" href="{% url 'admin:index' %}">Beheer</a>{% else %}<a class="nav-login" href="{% url 'admin:login' %}">Inloggen</a>{% endif %}
+        <a href="{% url 'website:home' %}">Home</a>
+        <a href="{% url 'website:home' %}#over-ons">Over ons</a>
+        <a href="{% url 'website:home' %}#training">Trainingen</a>
+        <a href="{% url 'content:list' %}">Nieuws</a>
+        <a href="{% url 'website:home' %}#contact">Contact</a>
+        {% if user.is_authenticated %}{% if user.is_staff %}<a class="nav-login" href="{% url 'admin:index' %}">Beheer</a>{% else %}<a class="nav-login" href="{% url 'content:submit' %}">Bericht insturen</a>{% endif %}{% else %}<a class="nav-login" href="{% url 'login' %}">Inloggen</a>{% endif %}
       </nav>
     </div>
   </header>
   <main id="main">{% block content %}{% endblock %}</main>
-  <footer class="site-footer"><div class="container footer-inner"><div><strong>Mijn Hond Als Vriend</strong><p>Met aandacht voor hond én mens.</p></div><div><a href="#over-ons">Over ons</a><a href="#training">Trainingen</a><a href="#contact">Contact</a></div><small>© {% now 'Y' %} MHAV · Met plezier samen leren</small></div></footer>
+  <footer class="site-footer"><div class="container footer-inner"><div><strong>Mijn Hond Als Vriend</strong><p>Met aandacht voor hond én mens.</p></div><div><a href="{% url 'website:home' %}#over-ons">Over ons</a><a href="{% url 'website:home' %}#training">Trainingen</a><a href="{% url 'website:home' %}#contact">Contact</a></div><small>© {% now 'Y' %} MHAV · Met plezier samen leren</small></div></footer>
 </body>
 </html>
