@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}
+    Inschrijfaanvragen | MHAV
+{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="/static/css/mhav-beheer.css">
+{% endblock %}
+{% block content %}
+    <section class="page-intro">
+        <div class="container">
+            <a href="{% url 'planning:overview' %}">← Cursusadministratie</a>
+            <h1>
+                Inschrijfaanvragen
+            </h1>
+            <p>
+                {{ total }} aanvragen
+                {% if current_status %}
+                    met geselecteerde status
+                {% endif %}
+                . Bekijk de gegevens en bepaal de vervolgstap.
+            </p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <div class="mhav-plan-actions">
+                <a class="button button-outline" href="{% url 'planning:application_list' %}">Alle</a>
+                {% for value,label in statuses %}
+                    <a class="button button-outline" href="?status={{ value }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+            <div class="mhav-plan-grid">
+                {% for item in applications %}
+                    <a class="mhav-plan-card" href="{% url 'planning:application_detail' item.pk %}">
+                    <h2>
+                        {{ item.first_name }} {{ item.last_name }}
+                    </h2>
+                    <p>
+                        <strong>{{ item.dog_name }}</strong> · {{ item.course.title|default:'Geen cursus' }}
+                    </p>
+                    <p>
+                        {{ item.created_at|date:'d-m-Y H:i' }} · {{ item.get_status_display }}
+                    </p>
+                    <strong>Bekijken →</strong></a>
+                {% empty %}
+                    <p>
+                        Geen aanvragen gevonden.
+                    </p>
+                {% endfor %}
+            </div>
+            {% if total > 250 %}
+                <p>
+                    De eerste 250 aanvragen worden getoond.
+                </p>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

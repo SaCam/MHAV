@@ -1,12 +1,54 @@
 {% extends 'base.html' %}
-{% block title %}Beheer | MHAV{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="/static/css/mhav-beheer.css">{% endblock %}
+{% block title %}
+    Beheer | MHAV
+{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="/static/css/mhav-beheer.css">
+{% endblock %}
 {% block content %}
-<section class="page-intro"><div class="container"><span class="eyebrow">MHAV · WEBSITEBEHEER</span><h1>Beheer</h1><p>Beheer de vereniging vanuit de vertrouwde MHAV-omgeving.</p></div></section>
-<section class="section"><div class="container"><div class="mhav-manage-grid">
-{% if can_manage_users %}<a class="mhav-manage-card" href="{% url 'planning:overview' %}"><span class="mhav-manage-icon">▦</span><h2>Cursusadministratie</h2><p>Plan lesgroepen, instructeurs, honden en geleiders per seizoen.</p><strong>Open planning →</strong></a>{% endif %}
-{% if can_manage_users %}<a class="mhav-manage-card" href="{% url 'accounts:beheer_users' %}"><span class="mhav-manage-icon">♙</span><h2>Gebruikers & rechten</h2><p>Beheer accounts, lidmaatschap en toegangsrechten.</p><strong>{{ user_count }} accounts · {{ member_count }} leden →</strong></a>{% endif %}
-<a class="mhav-manage-card" href="{% url 'website:home' %}"><span class="mhav-manage-icon">✎</span><h2>Website bewerken</h2><p>Open de pagina en gebruik de bewerkknoppen bij de afzonderlijke secties.</p><strong>Ga naar homepage →</strong></a>
-
-</div></div></section>
+    <section class="page-intro">
+        <div class="container">
+            <span class="eyebrow">MHAV · WEBSITEBEHEER</span>
+            <h1>
+                Beheer
+            </h1>
+            <p>
+                Beheer de vereniging vanuit de vertrouwde MHAV-omgeving.
+            </p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <div class="mhav-manage-grid">
+                {% if can_manage_users %}
+                    <a class="mhav-manage-card" href="{% url 'planning:overview' %}"><span class="mhav-manage-icon">▦</span>
+                    <h2>
+                        Cursusadministratie
+                    </h2>
+                    <p>
+                        Plan lesgroepen, instructeurs, honden en geleiders per seizoen.
+                    </p>
+                    <strong>Open planning →</strong></a>
+                {% endif %}
+                {% if can_manage_users %}
+                    <a class="mhav-manage-card" href="{% url 'accounts:beheer_users' %}"><span class="mhav-manage-icon">♙</span>
+                    <h2>
+                        Gebruikers & rechten
+                    </h2>
+                    <p>
+                        Beheer accounts, lidmaatschap en toegangsrechten.
+                    </p>
+                    <strong>{{ user_count }} accounts · {{ member_count }} leden →</strong></a>
+                {% endif %}
+                <a class="mhav-manage-card" href="{% url 'website:home' %}"><span class="mhav-manage-icon">✎</span>
+                <h2>
+                    Website bewerken
+                </h2>
+                <p>
+                    Open de pagina en gebruik de bewerkknoppen bij de afzonderlijke secties.
+                </p>
+                <strong>Ga naar homepage →</strong></a>
+            </div>
+        </div>
+    </section>
 {% endblock %}

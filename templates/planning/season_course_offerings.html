@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Cursussen & inschrijving | MHAV{% endblock %}
+{% block content %}
+<section class="page-intro"><div class="container">
+    <a href="{% url 'planning:season_detail' season.pk %}">← {{ season.name }}</a>
+    <h1>Cursussen & inschrijving</h1>
+    <p>Controleer per cursus de planning, keur deze goed en open daarna afzonderlijk de inschrijving.</p>
+</div></section>
+<section class="section"><div class="container" style="max-width:1080px;">
+{% for row in rows %}
+<article style="border:1px solid #d7e2d8;border-radius:18px;padding:24px;margin-bottom:20px;background:#fff;">
+    <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;">
+        <h2 style="margin:0;">{{ row.course.title }}</h2>
+        {% if row.open %}<strong style="color:#20633f;">✓ Inschrijving open</strong>
+        {% elif row.offering.registration_open and not row.valid %}<strong style="color:#9a4029;">⚠ Planning gewijzigd — inschrijving geblokkeerd</strong>
+        {% elif row.valid %}<strong>Goedgekeurd — inschrijving gesloten</strong>
+        {% else %}<strong>In voorbereiding</strong>{% endif %}
+    </div>
+    <p>{{ row.snapshot.groups|length }} lesgroep(en) · {{ row.snapshot.uncovered|length }} lesdagen zonder bevestigde dekking</p>
+    {% if row.snapshot.issues %}<div style="padding:14px;background:#fff0e9;border-radius:10px;"><strong>Verplichte punten</strong><ul>{% for issue in row.snapshot.issues %}<li>{{ issue }}</li>{% endfor %}</ul></div>{% endif %}
+    {% if row.snapshot.uncovered %}<details style="margin:12px 0;"><summary>Bekijk ontbrekende instructeursdekking ({{ row.snapshot.uncovered|length }})</summary><ul>{% for issue in row.snapshot.uncovered %}<li>{{ issue }}</li>{% endfor %}</ul></details>{% endif %}
+    {% if row.offering.approved_by %}<p style="font-size:.9rem;color:#526557;">Laatste goedkeuring: {{ row.offering.approved_by.get_full_name|default:row.offering.approved_by.username }} · {{ row.offering.approved_at|date:'d-m-Y H:i' }}{% if row.offering.coverage_override %}<br>Uitzondering: {{ row.offering.override_reason }}{% endif %}</p>{% endif %}
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        {% if not row.valid %}
+        <form method="post" style="flex:1;min-width:230px;">{% csrf_token %}<input type="hidden" name="course_id" value="{{ row.course.pk }}"><input type="hidden" name="action" value="approve">
+            {% if row.snapshot.uncovered %}<label for="reason-{{ row.course.pk }}">Reden voor uitzondering (verplicht bij ontbrekende dekking)</label><textarea id="reason-{{ row.course.pk }}" name="override_reason" rows="2" style="width:100%;" placeholder="Hoe wordt de vervanging geregeld?"></textarea>{% endif %}
+            <button class="button button-primary" type="submit" {% if row.snapshot.issues %}disabled{% endif %}>Planning goedkeuren</button>
+        </form>
+        {% else %}
+        <form method="post">{% csrf_token %}<input type="hidden" name="course_id" value="{{ row.course.pk }}"><input type="hidden" name="action" value="{% if row.offering.registration_open %}close{% else %}open{% endif %}"><button class="button button-primary" type="submit">{% if row.offering.registration_open %}Inschrijving sluiten{% else %}Inschrijving openen{% endif %}</button></form>
+        {% endif %}
+        {% if row.offering.approved %}<form method="post">{% csrf_token %}<input type="hidden" name="course_id" value="{{ row.course.pk }}"><input type="hidden" name="action" value="revoke"><button class="button button-outline" type="submit">Goedkeuring intrekken</button></form>{% endif %}
+    </div>
+</article>
+{% empty %}<p>Geen gepubliceerde cursussen gevonden. Maak eerst een cursus aan in Cursusbeheer.</p>{% endfor %}
+</div></section>
+{% endblock %}

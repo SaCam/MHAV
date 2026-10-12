@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}
+    Aanmelding ontvangen | MHAV
+{% endblock %}
+{% block content %}
+    <section class="page-intro">
+        <div class="container">
+            <h1>
+                Bedankt voor je aanmelding!
+            </h1>
+            <p>
+                Je inschrijfaanvraag is ontvangen. De cursusadministratie neemt contact met je op over de mogelijkheden. Je bent nog niet definitief ingedeeld.
+            </p>
+            {% if application and not application.user_id and not request.user.is_authenticated %}
+                <div class="mhav-registration" style="max-width:680px;margin:24px 0">
+                    <h2>
+                        Ook een account bij MHAV?
+                    </h2>
+                    <p>
+                        Je hebt je gegevens al ingevuld. Maak vrijblijvend een websiteaccount aan zodat je later je gegevens kunt terugvinden. Je cursusaanmelding is al ontvangen, ook als je geen account aanmaakt.
+                    </p>
+                    <form method="post" action="{% url 'website:application_account_invite' %}">
+                        {% csrf_token %}
+                        <button class="button button-primary" type="submit">Stuur mij een verificatielink per e-mail →</button>
+                    </form>
+                </div>
+            {% endif %}
+            <a class="button button-primary" href="{% url 'website:courses' %}">Terug naar cursussen →</a>
+        </div>
+    </section>
+{% endblock %}

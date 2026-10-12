@@ -1,7 +1,85 @@
 {% extends "base.html" %}
-{% block title %}De instructeurs | MHAV{% endblock %}
+{% block title %}
+    De instructeurs | MHAV
+{% endblock %}
 {% block content %}
-<section class="v6-page-hero"><div class="container"><span class="editorial-kicker">DE MENSEN ACHTER MHAV</span><h1>Een goed team.<br><em>Voor jou en je hond.</em></h1><p>Onze instructeurs begeleiden de trainingen en delen hun kennis en enthousiasme met de vereniging.</p></div></section>
-<section class="editorial-section"><div class="container"><div class="editorial-section-title"><span class="editorial-kicker">MAAK KENNIS</span><h2>Onze instructeurs.</h2></div><div class="v6-team-grid">{% for instructor in instructors %}<article class="v6-team-card"><div class="v6-team-photo">{% if instructor.photo %}<img src="{{ instructor.photo.url }}" alt="Portret van {{ instructor.name }}" loading="lazy">{% else %}<div class="editorial-placeholder"><span>✦</span><small>Portret volgt</small></div>{% endif %}</div><div class="v6-team-body"><span class="editorial-kicker">{% if instructor.role %}{{ instructor.role }}{% else %}MHAV INSTRUCTEUR{% endif %}</span><h2>{{ instructor.name }}</h2>{% if instructor.biography %}<div class="v6-bio">{{ instructor.biography|linebreaks }}</div>{% else %}<p>Meer over deze instructeur volgt binnenkort.</p>{% endif %}</div></article>{% empty %}<div class="v6-empty"><h2>Ons team wordt binnenkort voorgesteld</h2><p>Onze trainers stellen zich hier binnenkort voor.</p></div>{% endfor %}</div></div></section>
-<section class="mhav-wide-cta"><div class="container"><div><h2>Een vraag aan de vereniging?</h2><p>Neem contact op en we helpen je graag verder.</p></div><a class="button button-light" href="{% url 'website:contact' %}">Contact ↗</a></div></section>
+    <section class="v6-page-hero">
+        <div class="container">
+            <span class="editorial-kicker">DE MENSEN ACHTER MHAV</span>
+            <h1>
+                Een goed team.<br><em>Voor jou en je hond.</em>
+            </h1>
+            <p>
+                Onze instructeurs begeleiden de trainingen en delen hun kennis en enthousiasme met de vereniging.
+            </p>
+        </div>
+    </section>
+    <section class="editorial-section">
+        <div class="container">
+            <div class="editorial-section-title">
+                <span class="editorial-kicker">MAAK KENNIS</span>
+                <h2>
+                    Onze instructeurs.
+                </h2>
+            </div>
+            <div class="v6-team-grid">
+                {% for instructor in instructors %}
+                    <article class="v6-team-card">
+                        <div class="v6-team-photo">
+                            {% if instructor.photo %}
+                                <img src="{{ instructor.photo.url }}" alt="Portret van {{ instructor.name }}" loading="lazy">
+                            {% else %}
+                                <div class="editorial-placeholder">
+                                    <span>✦</span><small>Portret volgt</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="v6-team-body">
+                            <span class="editorial-kicker">
+                            {% if instructor.role %}
+                                {{ instructor.role }}
+                            {% else %}
+                                MHAV INSTRUCTEUR
+                            {% endif %}
+                            </span>
+                            <h2>
+                                {{ instructor.name }}
+                            </h2>
+                            {% if instructor.biography %}
+                                <div class="v6-bio">
+                                    {{ instructor.biography|linebreaks }}
+                                </div>
+                            {% else %}
+                                <p>
+                                    Meer over deze instructeur volgt binnenkort.
+                                </p>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="v6-empty">
+                        <h2>
+                            Ons team wordt binnenkort voorgesteld
+                        </h2>
+                        <p>
+                            Onze trainers stellen zich hier binnenkort voor.
+                        </p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    <section class="mhav-wide-cta">
+        <div class="container">
+            <div>
+                <h2>
+                    Een vraag aan de vereniging?
+                </h2>
+                <p>
+                    Neem contact op en we helpen je graag verder.
+                </p>
+            </div>
+            <a class="button button-light" href="{% url 'website:contact' %}">Contact ↗</a>
+        </div>
+    </section>
 {% endblock %}

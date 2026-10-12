@@ -1,1 +1,14 @@
-  <footer class="site-footer"><div class="container footer-inner"><div><strong>Mijn Hond Als Vriend</strong><p>Met aandacht voor hond én mens.</p></div><div><a href="{% url 'website:general' %}">Algemeen</a><a href="{% url 'website:courses' %}">Cursussen</a><a href="{% url 'website:contact' %}">Contact</a></div><small>© {% now 'Y' %} MHAV · Met plezier samen leren</small></div></footer>
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div>
+            <strong>Mijn Hond Als Vriend</strong>
+            <p>
+                Met aandacht voor hond én mens.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'website:general' %}">Algemeen</a><a href="{% url 'website:courses' %}">Cursussen</a><a href="{% url 'website:contact' %}">Contact</a>
+        </div>
+        <small>© {% now 'Y' %} MHAV · Met plezier samen leren</small>
+    </div>
+</footer>

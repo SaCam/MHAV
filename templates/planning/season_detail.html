@@ -1,1 +1,89 @@
-{% extends 'base.html' %}{% block extra_css %}<link rel="stylesheet" href="/static/css/mhav-beheer.css">{% endblock %}{% block title %}{{ season.name }} | MHAV{% endblock %}{% block content %}<section class="page-intro"><div class="container"><a href="{% url 'planning:overview' %}">← Seizoensplanning</a><h1>{{ season.name }}</h1><p>{{ season.get_status_display }} · {{ season.starts_on|date:'d-m-Y' }} t/m {{ season.ends_on|date:'d-m-Y' }}</p></div></section><section class="section"><div class="container"><div class="mhav-plan-actions"><a class="button button-primary" href="{% url 'planning:new' 'groups' %}">+ Lesgroep toevoegen</a><a class="button button-outline" href="{% url 'planning:edit' 'seasons' season.pk %}">Seizoen bewerken</a></div><div class="mhav-plan-grid">{% for group in groups %}<a class="mhav-plan-card" href="{% url 'planning:group_detail' group.pk %}"><h2>{{ group.name }}</h2><p>{{ group.course_title }}</p><p>{{ group.get_day_display }} · {{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }}</p><p>{% if group.trainer %}{{ group.trainer.get_full_name|default:group.trainer.email }}{% else %}Nog geen instructeur{% endif %}</p><strong>{{ group.placed_count }}/{{ group.capacity }} deelnemers →</strong></a>{% empty %}<p>Er zijn nog geen lesgroepen.</p>{% endfor %}</div></div></section>{% endblock %}
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ season.name }} | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-season-ux.css' %}">{% endblock %}
+{% block content %}
+<section class="page-intro">
+    <div class="container">
+        <a href="{% url 'planning:overview' %}">← Cursusadministratie</a>
+        <h1>{{ season.name }}</h1>
+        <p>{{ season.get_status_display }} · {{ season.starts_on|date:'d-m-Y' }} t/m {{ season.ends_on|date:'d-m-Y' }}</p>
+    </div>
+</section>
+<section class="section">
+    <div class="container mhav-flow-wrap">
+        <div class="mhav-flow-heading">
+            <p class="mhav-flow-subtitle">{{ season.lesson_count }} lessen · {{ season.get_lesson_day_display }}</p>
+            <div class="mhav-flow-actions">
+                <a class="button button-primary" href="{% url 'planning:season_course_offerings' season.pk %}">Cursussen & inschrijving beheren</a>
+                <a class="button button-outline" href="{% url 'planning:edit' 'seasons' season.pk %}">Seizoen bewerken</a>
+                <a class="button button-primary" href="{% url 'planning:group_new' season.pk %}">+ Lesgroep toevoegen</a>
+            </div>
+        </div>
+        <div class="mhav-flow-stats">
+            <div class="mhav-flow-stat"><strong>{{ response_count }}</strong><span>Reacties instructeurs</span></div>
+            <div class="mhav-flow-stat"><strong>{{ available_count }}</strong><span>Volledig beschikbaar</span></div>
+            <div class="mhav-flow-stat"><strong>{{ partial_count }}</strong><span>Gedeeltelijk beschikbaar</span></div>
+            <div class="mhav-flow-stat"><strong>{{ groups|length }}</strong><span>Lesgroepen</span></div>
+        </div>
+        {% if season.lesson_day != 'sat' %}
+        <section class="mhav-flow-panel">
+            <strong>Let op:</strong> lesgroepen worden op zaterdag gepland. Bewerk dit seizoen en zet de lesdag op zaterdag voordat je lesgroepen toevoegt.
+        </section>
+        {% endif %}
+        <section class="mhav-flow-panel">
+            <h2>Leskalender</h2>
+            <div class="mhav-date-grid">
+                {% for lesson_date in season.lesson_dates %}
+                    <div class="mhav-date-tile" data-state="yes">
+                        <span class="mhav-date-symbol">{{ forloop.counter }}</span>
+                        <span><strong>Les {{ forloop.counter }}</strong><br>{{ lesson_date|date:'d-m-Y' }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+        <section class="mhav-flow-panel">
+            <h2>Beschikbaarheid instructeurs</h2>
+            <p class="mhav-flow-subtitle">✓ Beschikbaar · ✕ Niet beschikbaar · ? Weet ik nog niet · ○ Nog niet ingevuld</p>
+            <div class="mhav-flow-grid" style="margin-top: 1rem;">
+                {% for response in availability_responses %}
+                    <article class="mhav-flow-card">
+                        <span class="mhav-flow-tag {% if response.response == 'none' %}mhav-flow-tag--no{% elif response.response == 'partial' %}mhav-flow-tag--maybe{% endif %}">{{ response.get_response_display }}</span>
+                        <h3>{{ response.trainer.get_full_name|default:response.trainer.email }}</h3>
+                        <p>{{ response.available_count }} van {{ season.lesson_count }} dagen bevestigd beschikbaar</p>
+                        <div class="mhav-mini-dates">
+                            {% for day, state in response.date_cells %}
+                                <span class="mhav-mini-date mhav-mini-date--{{ state }}" title="{{ day|date:'d-m-Y' }}">
+                                    {{ day|date:'d/m' }} {% if state == 'yes' %}✓{% elif state == 'no' %}✕{% elif state == 'maybe' %}?{% else %}○{% endif %}
+                                </span>
+                            {% endfor %}
+                        </div>
+                        {% if response.notes %}<p>{{ response.notes }}</p>{% endif %}
+                    </article>
+                {% empty %}
+                    <p>Er zijn nog geen reacties. Instructeurs kunnen hun beschikbaarheid via Mijn MHAV doorgeven.</p>
+                {% endfor %}
+            </div>
+        </section>
+        <section class="mhav-flow-panel">
+            <div class="mhav-flow-heading">
+                <h2>Lesgroepen</h2>
+                <a class="button button-outline" href="{% url 'planning:group_new' season.pk %}">+ Nieuwe lesgroep</a>
+            </div>
+            <div class="mhav-flow-grid">
+                {% for group in groups %}
+                    <a class="mhav-flow-card" href="{% url 'planning:group_detail' group.pk %}">
+                        <h3>{{ group.name }}</h3>
+                        <p>{{ group.course_title }}</p>
+                        <p>{{ group.get_day_display }} · {{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }} · {{ group.lesson_dates_selected|length }} lesdagen</p>
+                        <p>{% if group.trainer %}{{ group.trainer.get_full_name|default:group.trainer.email }}{% else %}Nog geen instructeur{% endif %}</p>
+                        <strong>{{ group.placed_count }}/{{ group.capacity }} deelnemers →</strong>
+                    </a>
+                {% empty %}
+                    <p>Er zijn nog geen lesgroepen voor dit seizoen.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</section>
+{% endblock %}

@@ -1,3 +1,24 @@
 {% extends "base.html" %}
-{% block title %}{{ post.title }} | Mijn Hond Als Vriend{% endblock %}
-{% block content %}<article class="article-layout container"><a class="text-link" href="{% url 'content:list' %}">← Terug naar nieuws</a><p class="eyebrow">{{ post.published_at|date:"j F Y" }}</p><h1>{{ post.title }}</h1><p class="article-lead">{{ post.summary }}</p>{% if post.image %}<img class="article-image" src="{{ post.image.url }}" alt="Foto bij {{ post.title }}">{% endif %}<div class="article-body">{{ post.body|linebreaks }}</div></article>{% endblock %}
+{% block title %}
+    {{ post.title }} | Mijn Hond Als Vriend
+{% endblock %}
+{% block content %}
+    <article class="article-layout container">
+        <a class="text-link" href="{% url 'content:list' %}">← Terug naar nieuws</a>
+        <p class="eyebrow">
+            {{ post.published_at|date:"j F Y" }}
+        </p>
+        <h1>
+            {{ post.title }}
+        </h1>
+        <p class="article-lead">
+            {{ post.summary }}
+        </p>
+        {% if post.image %}
+            <img class="article-image" src="{{ post.image.url }}" alt="Foto bij {{ post.title }}">
+        {% endif %}
+        <div class="article-body">
+            {{ post.body|linebreaks }}
+        </div>
+    </article>
+{% endblock %}

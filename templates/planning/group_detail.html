@@ -1,1 +1,207 @@
-{% extends 'base.html' %}{% block extra_css %}<link rel="stylesheet" href="/static/css/mhav-beheer.css">{% endblock %}{% block title %}{{ group.name }} | MHAV{% endblock %}{% block content %}<section class="page-intro"><div class="container"><a href="{% url 'planning:season_detail' group.season.pk %}">← {{ group.season.name }}</a><h1>{{ group.name }}</h1><p>{{ group.course_title }} · {{ group.get_day_display }} {{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }}</p></div></section><section class="section"><div class="container"><p><strong>Ingepland:</strong> {{ placed_count }} / {{ group.capacity }}</p><div class="mhav-plan-actions"><a class="button button-primary" href="{% url 'planning:new' 'enrollments' %}">+ Combinatie inplannen</a><a class="button button-outline" href="{% url 'planning:edit' 'groups' group.pk %}">Lesgroep bewerken</a></div><div class="mhav-plan-grid">{% for enrollment in enrollments %}<div class="mhav-plan-card"><h2>{{ enrollment.combination.dog.name }}</h2><p>{{ enrollment.combination.handler.get_full_name|default:enrollment.combination.handler.email }}</p><p>{{ enrollment.get_status_display }}</p><a href="{% url 'planning:edit' 'enrollments' enrollment.pk %}">Inschrijving bewerken →</a></div>{% empty %}<p>Er zijn nog geen combinaties ingeschreven.</p>{% endfor %}</div></div></section>{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ group.name }} | MHAV{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mhav-beheer.css' %}">
+<style>
+.mhav-group-detail{--forest:#214c39;--soft:#f4f7f2;--border:#dbe5da;--muted:#627368;--radius:16px;color:#243c30}
+.mhav-group-detail .gd-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.3rem}
+.mhav-group-detail .gd-actions{display:flex;gap:.65rem;flex-wrap:wrap}
+.mhav-group-detail .gd-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin-bottom:1.5rem}
+.mhav-group-detail .gd-stat{border:1px solid var(--border);border-radius:var(--radius);background:#fff;padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:.3rem}
+.mhav-group-detail .gd-stat strong{font-size:clamp(1.45rem,3vw,2rem);line-height:1.1;color:var(--forest)}
+.mhav-group-detail .gd-stat span{font-size:.9rem;color:var(--muted)}
+.mhav-group-detail .gd-panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:clamp(1rem,2.5vw,1.6rem);margin-bottom:1.4rem}
+.mhav-group-detail .gd-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.mhav-group-detail .gd-panel h2{margin:0 0 .3rem;font-size:1.35rem}
+.mhav-group-detail .gd-muted{color:var(--muted);margin:0;font-size:.94rem}
+.mhav-group-detail .gd-filter{border:1px solid var(--border);border-radius:9px;padding:.6rem .85rem;background:var(--soft);color:var(--forest);font:inherit;font-weight:650;cursor:pointer}
+.mhav-group-detail .gd-filter[aria-pressed=true]{background:var(--forest);color:white}
+.mhav-group-detail .gd-list{display:grid;gap:.7rem}
+.mhav-group-detail .gd-lesson{display:grid;grid-template-columns:76px minmax(0,1fr) auto;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:13px;background:#fff}
+.mhav-group-detail .gd-lesson[data-coverage=attention]{border-left:4px solid #c1842e}
+.mhav-group-detail .gd-lesson[data-coverage=covered]{border-left:4px solid #41845c}
+.mhav-group-detail .gd-date{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--soft);border-radius:10px;padding:.6rem .35rem;text-align:center;min-height:70px}
+.mhav-group-detail .gd-date strong{font-size:1.55rem;line-height:1.1;color:var(--forest)}
+.mhav-group-detail .gd-date span{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.mhav-group-detail .gd-lesson-info{min-width:0;display:grid;gap:.3rem}
+.mhav-group-detail .gd-lesson-info strong{overflow-wrap:anywhere}
+.mhav-group-detail .gd-sub{font-size:.83rem;color:var(--muted)}
+.mhav-group-detail .gd-pill{display:inline-flex;align-items:center;gap:.35rem;border-radius:100px;padding:.32rem .65rem;font-size:.8rem;font-weight:750;white-space:normal;width:fit-content}
+.mhav-group-detail .gd-pill--yes{background:#e1f3e7;color:#17623a}
+.mhav-group-detail .gd-pill--no{background:#fae4e4;color:#a52d2d}
+.mhav-group-detail .gd-pill--maybe{background:#fff1d2;color:#805b12}
+.mhav-group-detail .gd-pill--unset{background:#edf0ee;color:#55645a}
+.mhav-group-detail .gd-lesson-actions{display:flex;flex-direction:column;align-items:flex-end;gap:.5rem}
+.mhav-group-detail .gd-edit-toggle{background:#fff;color:var(--forest);border:1px solid #a6c0ac;border-radius:9px;padding:.55rem .75rem;font:inherit;font-weight:650;cursor:pointer;white-space:nowrap}
+.mhav-group-detail .gd-edit-toggle:hover{background:var(--soft)}
+.mhav-group-detail .gd-editor{grid-column:1/-1;border-top:1px solid var(--border);padding-top:1rem;margin-top:.1rem}
+.mhav-group-detail .gd-editor[hidden],.mhav-group-detail .gd-lesson[hidden]{display:none!important}
+.mhav-group-detail .gd-editor-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem;align-items:end}
+.mhav-group-detail .gd-field{display:flex;flex-direction:column;gap:.4rem;font-weight:650;font-size:.92rem}
+.mhav-group-detail .gd-field select{width:100%;min-width:0;padding:.75rem;border:1px solid #a9bcad;border-radius:9px;background:white;font:inherit}
+.mhav-group-detail .gd-check{display:flex;gap:.5rem;align-items:center;min-height:45px;font-weight:650;cursor:pointer}
+.mhav-group-detail .gd-check input{width:1.2rem;height:1.2rem;accent-color:var(--forest)}
+.mhav-group-detail .gd-editor-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;margin-top:1rem}
+.mhav-group-detail .gd-editor-note{font-size:.85rem;color:var(--muted);margin:0}
+.mhav-group-detail .gd-empty{padding:1.3rem;background:var(--soft);border-radius:10px;color:var(--muted)}
+.mhav-group-detail .gd-legend{display:flex;flex-wrap:wrap;gap:.6rem 1rem;margin-top:1rem;font-size:.84rem;color:var(--muted)}
+.mhav-group-detail .gd-legend span{display:inline-flex;align-items:center;gap:.3rem}
+.mhav-group-detail .gd-legend i{display:inline-block;width:.65rem;height:.65rem;border-radius:50%;background:#adb8b0}
+.mhav-group-detail .gd-legend .yes{background:#41845c}.mhav-group-detail .gd-legend .no{background:#c65050}.mhav-group-detail .gd-legend .maybe{background:#c9953a}
+.mhav-group-detail .gd-enrollments{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.8rem}
+.mhav-group-detail .gd-enrollment{padding:1rem;background:var(--soft);border-radius:12px;display:grid;gap:.35rem}
+.mhav-group-detail .gd-enrollment a{font-weight:650}
+@media(max-width:700px){.mhav-group-detail .gd-lesson{grid-template-columns:64px minmax(0,1fr);gap:.7rem;padding:.8rem}.mhav-group-detail .gd-lesson-actions{grid-column:1/-1;align-items:stretch}.mhav-group-detail .gd-edit-toggle{width:100%}.mhav-group-detail .gd-editor-grid{grid-template-columns:1fr}.mhav-group-detail .gd-stats{gap:.45rem}.mhav-group-detail .gd-stat{padding:.8rem .65rem}.mhav-group-detail .gd-stat span{font-size:.77rem}}
+</style>
+{% endblock %}
+{% block content %}
+<section class="page-intro">
+    <div class="container">
+        <a href="{% url 'planning:season_detail' group.season.pk %}">← {{ group.season.name }}</a>
+        <h1>{{ group.name }}</h1>
+        <p>{{ group.course_title }} · {{ group.get_day_display }} {{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }}</p>
+    </div>
+</section>
+<section class="section">
+    <div class="container mhav-group-detail">
+        <div class="gd-top">
+            <p class="gd-muted">Hoofdinstructeur: <strong>{% if group.trainer %}{{ group.trainer.get_full_name|default:group.trainer.email }}{% else %}Nog niet toegewezen{% endif %}</strong></p>
+            <div class="gd-actions">
+                <a class="button button-outline" href="{% url 'planning:group_edit' group.pk %}">Lesgroep bewerken</a>
+                <a class="button button-primary" href="{% url 'planning:new' 'enrollments' %}">+ Combinatie inplannen</a>
+            </div>
+        </div>
+        <div class="gd-stats" aria-label="Overzicht lesgroep">
+            <div class="gd-stat"><strong>{{ lesson_rows|length }}</strong><span>Geplande lessen</span></div>
+            <div class="gd-stat"><strong>{{ covered_count }}</strong><span>Instructeur bevestigd</span></div>
+            <div class="gd-stat"><strong>{{ placed_count }} / {{ group.capacity }}</strong><span>Deelnemers ingepland</span></div>
+        </div>
+        <section class="gd-panel" aria-labelledby="gd-planning-title">
+            <div class="gd-panel-head">
+                <div>
+                    <h2 id="gd-planning-title">Lesplanning & instructeurs</h2>
+                    <p class="gd-muted">Per zaterdag zie je direct of de les door een instructeur is bevestigd.</p>
+                </div>
+                <button type="button" class="gd-filter" id="gd-attention-filter" aria-pressed="false">Alleen aandachtspunten</button>
+            </div>
+            <div class="gd-list" id="gd-lesson-list">
+                {% for lesson in lesson_rows %}
+                    <article class="gd-lesson" data-coverage="{% if lesson.replacement %}{% if lesson.replacement.offline_confirmed %}covered{% else %}attention{% endif %}{% elif group.trainer and lesson.state == 'yes' %}covered{% else %}attention{% endif %}">
+                        <div class="gd-date" aria-label="{{ lesson.date|date:'l d F Y' }}">
+                            <strong>{{ lesson.date|date:'d' }}</strong>
+                            <span>{{ lesson.date|date:'M Y' }}</span>
+                        </div>
+                        <div class="gd-lesson-info">
+                            {% if lesson.replacement %}
+                                <strong>{{ lesson.replacement.trainer.get_full_name|default:lesson.replacement.trainer.email }}</strong>
+                                <span class="gd-sub">Vervangende instructeur</span>
+                                {% if lesson.replacement.offline_confirmed %}
+                                    <span class="gd-pill gd-pill--yes">✓ Offline bevestigd</span>
+                                {% else %}
+                                    <span class="gd-pill gd-pill--maybe">◷ Wacht op offline bevestiging</span>
+                                {% endif %}
+                                <span class="gd-sub">Hoofdinstructeur: {% if lesson.state == 'yes' %}beschikbaar{% elif lesson.state == 'no' %}niet beschikbaar{% elif lesson.state == 'maybe' %}onzeker{% else %}niet bevestigd{% endif %}</span>
+                            {% else %}
+                                <strong>{% if group.trainer %}{{ group.trainer.get_full_name|default:group.trainer.email }}{% else %}Geen instructeur toegewezen{% endif %}</strong>
+                                {% if group.trainer and lesson.state == 'yes' %}
+                                    <span class="gd-pill gd-pill--yes">✓ Beschikbaarheid bevestigd</span>
+                                {% elif group.trainer and lesson.state == 'no' %}
+                                    <span class="gd-pill gd-pill--no">✕ Niet beschikbaar</span>
+                                {% elif group.trainer and lesson.state == 'maybe' %}
+                                    <span class="gd-pill gd-pill--maybe">? Beschikbaarheid onzeker</span>
+                                {% else %}
+                                    <span class="gd-pill gd-pill--unset">○ Niet bevestigd</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="gd-lesson-actions">
+                            <button type="button" class="gd-edit-toggle" aria-expanded="false" aria-controls="gd-editor-{{ forloop.counter }}">
+                                {% if lesson.replacement %}Vervanger wijzigen{% else %}Vervanger toewijzen{% endif %} <span aria-hidden="true">⌄</span>
+                            </button>
+                        </div>
+                        <div class="gd-editor" id="gd-editor-{{ forloop.counter }}" hidden>
+                            <form method="post" action="{% url 'planning:lesson_instructor_override' group.pk lesson.date|date:'Y-m-d' %}">
+                                {% csrf_token %}
+                                <div class="gd-editor-grid">
+                                    <label class="gd-field" for="replacement-{{ forloop.counter }}">
+                                        Vervangende instructeur
+                                        <select id="replacement-{{ forloop.counter }}" name="trainer">
+                                            <option value="">Geen vervanger (hoofdinstructeur)</option>
+                                            {% for trainer in trainer_choices %}
+                                                <option value="{{ trainer.pk }}" {% if lesson.replacement.trainer_id == trainer.pk %}selected{% endif %}>{{ trainer.get_full_name|default:trainer.email }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </label>
+                                    <label class="gd-check">
+                                        <input type="checkbox" name="offline_confirmed" {% if lesson.replacement.offline_confirmed %}checked{% endif %}>
+                                        Offline bevestigd
+                                    </label>
+                                </div>
+                                <div class="gd-editor-footer">
+                                    <p class="gd-editor-note">Een vervanger telt pas als gedekt wanneer deze offline is bevestigd.</p>
+                                    <button type="submit" class="button button-primary">Wijziging opslaan</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="gd-empty">Er zijn nog geen leszaterdagen geselecteerd. Kies de lesdagen via Lesgroep bewerken.</p>
+                {% endfor %}
+            </div>
+            <p class="gd-empty" id="gd-no-attention" hidden>Alle geplande lessen zijn bevestigd. Er zijn geen aandachtspunten.</p>
+            <div class="gd-legend" aria-label="Betekenis statussen">
+                <span><i class="yes"></i> Bevestigd</span>
+                <span><i class="no"></i> Niet beschikbaar</span>
+                <span><i class="maybe"></i> Onzeker of offline af te stemmen</span>
+                <span><i></i> Nog niet bevestigd</span>
+            </div>
+            {% if group.notes %}<p class="gd-muted" style="margin-top:1.2rem"><strong>Opmerking:</strong> {{ group.notes }}</p>{% endif %}
+        </section>
+        <section class="gd-panel" aria-labelledby="gd-enrollments-title">
+            <div class="gd-panel-head">
+                <div><h2 id="gd-enrollments-title">Deelnemers</h2><p class="gd-muted">{{ placed_count }} van {{ group.capacity }} plaatsen ingepland.</p></div>
+            </div>
+            <div class="gd-enrollments">
+                {% for enrollment in enrollments %}
+                    <div class="gd-enrollment">
+                        <strong>{{ enrollment.combination.dog.name }}</strong>
+                        <span>{{ enrollment.combination.handler.get_full_name|default:enrollment.combination.handler.email }}</span>
+                        <span class="gd-muted">{{ enrollment.get_status_display }}</span>
+                        <a href="{% url 'planning:edit' 'enrollments' enrollment.pk %}">Inschrijving bewerken →</a>
+                    </div>
+                {% empty %}
+                    <p class="gd-empty">Er zijn nog geen combinaties ingeschreven.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</section>
+<script>
+(function () {
+    'use strict';
+    document.querySelectorAll('.gd-edit-toggle').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var editor = document.getElementById(button.getAttribute('aria-controls'));
+            var willOpen = editor.hidden;
+            editor.hidden = !willOpen;
+            button.setAttribute('aria-expanded', String(willOpen));
+        });
+    });
+    var filter = document.getElementById('gd-attention-filter');
+    var rows = Array.from(document.querySelectorAll('#gd-lesson-list .gd-lesson'));
+    var empty = document.getElementById('gd-no-attention');
+    filter.addEventListener('click', function () {
+        var active = filter.getAttribute('aria-pressed') !== 'true';
+        filter.setAttribute('aria-pressed', String(active));
+        filter.textContent = active ? 'Alle lessen tonen' : 'Alleen aandachtspunten';
+        var visible = 0;
+        rows.forEach(function (row) {
+            row.hidden = active && row.dataset.coverage === 'covered';
+            if (!row.hidden) visible += 1;
+        });
+        empty.hidden = !active || visible > 0 || rows.length === 0;
+    });
+}());
+</script>
+{% endblock %}

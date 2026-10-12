@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    Inschrijven voor een cursus | MHAV
+{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/mhav-registration.css' %}">
+{% endblock %}
+{% block content %}
+    <section class="page-intro">
+        <div class="container">
+            <a href="{% url 'website:courses' %}">← Cursussen</a>
+            <h1>
+                Inschrijven voor een cursus
+            </h1>
+            <p>
+                Vul het formulier in. Je ontvangt pas een definitieve cursusplaats nadat de administratie je indeling heeft bevestigd. Een websiteaccount is niet verplicht.
+            </p>
+            <p>
+                <strong>Let op:</strong> Voor deelname is een kennelhoestenting (bordetella) verplicht. Laat je je hond titeren, dan is ook een enting tegen Leptospirose (L4) verplicht volgens het huidige verenigingsbeleid.
+            </p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container mhav-registration-wrap">
+            <form method="post" class="mhav-registration" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="mhav-registration-error">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                {{ form.website }}
+                <fieldset>
+                    <legend>1. Gegevens cursus</legend>
+                    <p>
+                        Welke cursus wil je volgen?
+                    </p>
+                    <div class="mhav-registration-grid">
+                        {% for field in form %}
+                            {% if field.name == 'season' or field.name == 'course' %}
+                                <div class="mhav-registration-field">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}
+                                    {% if field.field.required %}
+                                        *
+                                    {% endif %}
+                                    </label>{{ field }}{{ field.errors }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <p>
+                        De cursuskeuze en het seizoen bepalen welke lesmomenten beschikbaar zijn. De beschikbare lesmomenten worden automatisch bijgewerkt wanneer je een cursus of seizoen kiest.
+                    </p>
+                </fieldset>
+                <fieldset>
+                    <legend>2. Gegevens cursist</legend>
+                    <div class="mhav-registration-grid">
+                        {% for field in form %}
+                            {% if field.name == 'first_name' or field.name == 'middle_name' or field.name == 'last_name' or field.name == 'email' or field.name == 'phone' or field.name == 'street' or field.name == 'house_number' or field.name == 'postal_code' or field.name == 'city' or field.name == 'country' %}
+                                <div class="mhav-registration-field">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}
+                                    {% if field.field.required %}
+                                        *
+                                    {% endif %}
+                                    </label>{{ field }}{{ field.errors }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>3. Gegevens hond</legend>
+                    <div class="mhav-registration-grid">
+                        {% for field in form %}
+                            {% if field.name == 'dog_name' or field.name == 'dog_breed' or field.name == 'dog_birth_date' or field.name == 'dog_sex' or field.name == 'dog_origin' or field.name == 'dog_pedigree' or field.name == 'dog_notes' %}
+                                <div class="mhav-registration-field">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}
+                                    {% if field.field.required %}
+                                        *
+                                    {% endif %}
+                                    </label>{{ field }}
+                                    {% if field.help_text %}
+                                        <small>{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {{ field.errors }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>4. Aanvullende gegevens</legend>
+                    <div class="mhav-registration-grid">
+                        {% for field in form %}
+                            {% if field.name == 'dog_count' or field.name == 'first_dog' or field.name == 'trained_before' or field.name == 'experience' %}
+                                <div class="mhav-registration-field">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>5. Beschikbaarheid</legend>
+                    <p>
+                        Geef per lesmoment aan of je kunt. We proberen rekening te houden met je voorkeuren; plaatsing op een bepaald tijdstip is niet gegarandeerd.
+                    </p>
+                    {% if groups %}
+                        <div class="mhav-time-options">
+                            {% for group in groups %}
+                                <div class="mhav-time-row" data-course="{{ group.course_id|default_if_none:'' }}" data-season="{{ group.season_id }}">
+                                    <strong>{{ group.season.name }} — {{ group.get_day_display }} {{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }} ({{ group.name }})</strong><label><input type="radio" name="time_{{ group.pk }}" value="ok"> OK</label><label><input type="radio" name="time_{{ group.pk }}" value="preferred"> Dit tijdstip heeft mijn voorkeur</label><label><input type="radio" name="time_{{ group.pk }}" value="unavailable"> Dit tijdstip kan ik beslist niet</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>
+                            Er zijn nog geen lesmomenten gepubliceerd voor deze selectie. Geef je beschikbaarheid hieronder aan.
+                        </p>
+                    {% endif %}
+                    {% if preference_error %}
+                        <p class="mhav-registration-error">
+                            {{ preference_error }}
+                        </p>
+                    {% endif %}
+                    {% for field in form %}
+                        {% if field.name == 'availability' %}
+                            <div class="mhav-registration-field">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </fieldset>
+                <fieldset>
+                    <legend>6. Opmerkingen en privacy</legend>
+                    {% for field in form %}
+                        {% if field.name == 'remarks' %}
+                            <div class="mhav-registration-field">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="mhav-registration-consent">
+                        {{ form.privacy_agreement }}<label for="{{ form.privacy_agreement.id_for_label }}">Ik heb de <a href="{% url 'website:page' 'privacy' %}" target="_blank" rel="noopener">privacyverklaring</a> gelezen en ga akkoord met verwerking van mijn gegevens voor deze aanmelding. *</label>
+                    </div>
+                    {{ form.privacy_agreement.errors }}
+                    <p>
+                        Na verzending is je inschrijving nog niet definitief. De cursusadministratie neemt contact met je op.
+                    </p>
+                </fieldset>
+                <button class="button button-primary" type="submit">Aanmelding versturen →</button>
+                <p class="mhav-registration-footnote">
+                    * Verplicht veld
+                </p>
+            </form>
+        </div>
+    </section>
+    <script>
+(function(){
+ const course=document.getElementById('id_course'), season=document.getElementById('id_season');
+ const rows=document.querySelectorAll('.mhav-time-row');
+ function refresh(){ rows.forEach(row=>{ const show=!!course?.value && row.dataset.course===course.value && (!season?.value || row.dataset.season===season.value); row.hidden=!show; if(!show)row.querySelectorAll('input[type=radio]').forEach(input=>input.checked=false); }); }
+ course?.addEventListener('change',refresh); season?.addEventListener('change',refresh); refresh();
+})();
+</script>
+{% endblock %}

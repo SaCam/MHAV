@@ -1,6 +1,48 @@
 {% extends "base.html" %}
-{% block title %}Nieuws | Mijn Hond Als Vriend{% endblock %}
+{% block title %}
+    Nieuws | Mijn Hond Als Vriend
+{% endblock %}
 {% block content %}
-<section class="page-intro"><div class="container"><span class="eyebrow">UIT DE VERENIGING</span><h1>Nieuws & verhalen</h1><p>Berichten, activiteiten en mooie momenten bij MHAV.</p><a class="text-link" href="{% url 'content:submit' %}">Zelf een bericht insturen →</a></div></section>
-<section class="section"><div class="container"><div class="news-grid">{% for post in posts %}<article class="news-card">{% if post.image %}<a href="{% url 'content:detail' post.slug %}"><img class="news-card-image" src="{{ post.image.url }}" alt="" loading="lazy"></a>{% endif %}<span class="news-date">{{ post.published_at|date:"j F Y" }}</span><h2><a href="{% url 'content:detail' post.slug %}">{{ post.title }}</a></h2><p>{{ post.summary }}</p><a class="text-link" href="{% url 'content:detail' post.slug %}">Lees verder →</a></article>{% empty %}<div class="news-empty"><h2>Er is nog geen nieuws gepubliceerd.</h2><p>Kom binnenkort nog eens kijken.</p></div>{% endfor %}</div></div></section>
+    <section class="page-intro">
+        <div class="container">
+            <span class="eyebrow">UIT DE VERENIGING</span>
+            <h1>
+                Nieuws & verhalen
+            </h1>
+            <p>
+                Berichten, activiteiten en mooie momenten bij MHAV.
+            </p>
+            <a class="text-link" href="{% url 'content:submit' %}">Zelf een bericht insturen →</a>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <div class="news-grid">
+                {% for post in posts %}
+                    <article class="news-card">
+                        {% if post.image %}
+                            <a href="{% url 'content:detail' post.slug %}"><img class="news-card-image" src="{{ post.image.url }}" alt="" loading="lazy"></a>
+                        {% endif %}
+                        <span class="news-date">{{ post.published_at|date:"j F Y" }}</span>
+                        <h2>
+                            <a href="{% url 'content:detail' post.slug %}">{{ post.title }}</a>
+                        </h2>
+                        <p>
+                            {{ post.summary }}
+                        </p>
+                        <a class="text-link" href="{% url 'content:detail' post.slug %}">Lees verder →</a>
+                    </article>
+                {% empty %}
+                    <div class="news-empty">
+                        <h2>
+                            Er is nog geen nieuws gepubliceerd.
+                        </h2>
+                        <p>
+                            Kom binnenkort nog eens kijken.
+                        </p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
 {% endblock %}

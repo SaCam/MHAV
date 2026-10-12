@@ -21,10 +21,25 @@ def dashboard(request):
     profile, _ = MemberProfile.objects.get_or_create(user=request.user)
     is_complete = all([request.user.first_name, request.user.last_name, request.user.email,
                        profile.phone, profile.street, profile.house_number, profile.postal_code, profile.city])
+    from apps.planning.models import Season, TrainerSeasonAvailability
+
+    trainer_role = request.user.is_superuser or request.user.groups.filter(
+        name="MHAV - Trainer"
+    ).exists()
+    upcoming_seasons = []
+    if trainer_role:
+        seasons = Season.objects.filter(status=Season.Status.DRAFT).order_by("starts_on")
+        responses = {
+            response.season_id: response
+            for response in TrainerSeasonAvailability.objects.filter(trainer=request.user)
+        }
+        upcoming_seasons = [(season, responses.get(season.pk)) for season in seasons]
+
     return render(request, "accounts/dashboard.html", {
         "profile": profile, "is_member": request.user.groups.filter(name='MHAV - Lid').exists(),
         "profile_complete": is_complete,
-        "is_trainer": request.user.groups.filter(name="MHAV - Trainer").exists(),
+        "is_trainer": trainer_role,
+        "trainer_seasons": upcoming_seasons,
     })
 
 
@@ -152,7 +167,7 @@ def trainer_profile_edit(request):
     from django.core.exceptions import PermissionDenied
     from apps.website.models import Instructor
     from .trainer_forms import TrainerProfileForm
-    if not request.user.is_active or not request.user.groups.filter(name='MHAV - Trainer').exists():
+    if not request.user.is_active or not (request.user.is_superuser or request.user.groups.filter(name='MHAV - Trainer').exists()):
         raise PermissionDenied
     profile, _ = Instructor.objects.get_or_create(
         user=request.user,

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Beschikbaarheid {{ season.name }} | MHAV{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mhav-season-ux.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="page-intro">
+    <div class="container">
+        <a href="{% url 'planning:trainer_seasons' %}">← Mijn beschikbaarheid</a>
+        <h1>Beschikbaarheid doorgeven</h1>
+        <p>{{ season.name }} · {{ season.lesson_count }} lessen · {{ season.get_lesson_day_display }}</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container mhav-flow-wrap">
+        <form method="post" class="mhav-flow-panel" id="availability-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {{ form.response.errors }}
+
+            <h2>1. Kun je dit seizoen lesgeven?</h2>
+            <div class="mhav-flow-choices mhav-availability-modes">
+                <label class="mhav-flow-choice">
+                    <input type="radio" name="response" value="all"
+                           {% if form.response.value == 'all' %}checked{% endif %} required>
+                    <span>
+                        <strong>✓ Alle lesdagen beschikbaar</strong>
+                        <small>Alle lesdagen worden groen.</small>
+                    </span>
+                </label>
+                <label class="mhav-flow-choice">
+                    <input type="radio" name="response" value="partial"
+                           {% if form.response.value == 'partial' or not form.response.value %}checked{% endif %} required>
+                    <span>
+                        <strong>Beschikbaarheid per lesdag</strong>
+                        <small>Kies per datum ja, nee of weet ik nog niet.</small>
+                    </span>
+                </label>
+                <label class="mhav-flow-choice">
+                    <input type="radio" name="response" value="none"
+                           {% if form.response.value == 'none' %}checked{% endif %} required>
+                    <span>
+                        <strong>✕ Niet beschikbaar</strong>
+                        <small>Alle lesdagen worden rood.</small>
+                    </span>
+                </label>
+            </div>
+
+            <h2>2. Geef je beschikbaarheid per lesdag door</h2>
+            <p class="mhav-flow-subtitle" id="date-help" aria-live="polite"></p>
+            <div class="mhav-availability-legend">
+                <span>✓ Beschikbaar</span>
+                <span>✕ Niet beschikbaar</span>
+                <span>? Weet ik nog niet</span>
+                <span>○ Nog niet ingevuld</span>
+            </div>
+
+            <div class="mhav-date-grid mhav-availability-grid">
+                {% for cell in date_cells %}
+                    <div class="mhav-date-tile mhav-availability-tile"
+                         data-state="{{ cell.status }}" data-date="{{ cell.key }}">
+                        <div class="mhav-availability-tile-heading">
+                            <span class="mhav-date-symbol" aria-hidden="true">○</span>
+                            <span>
+                                <strong>Les {{ forloop.counter }}</strong>
+                                <small>{{ cell.date|date:'d-m-Y' }}</small>
+                            </span>
+                        </div>
+                        <div class="mhav-availability-buttons" role="group"
+                             aria-label="Beschikbaarheid voor {{ cell.date|date:'d-m-Y' }}">
+                            <button type="button" data-set-state="yes" aria-label="Beschikbaar" title="Beschikbaar">✓</button>
+                            <button type="button" data-set-state="no" aria-label="Niet beschikbaar" title="Niet beschikbaar">✕</button>
+                            <button type="button" data-set-state="maybe" aria-label="Weet ik nog niet" title="Weet ik nog niet">?</button>
+                        </div>
+                        <input type="hidden" name="date_status_{{ cell.key }}" value="{{ cell.status }}">
+                    </div>
+                {% endfor %}
+            </div>
+
+            <p class="mhav-flow-subtitle" id="availability-summary" aria-live="polite"></p>
+            <label class="mhav-flow-field" for="{{ form.notes.id_for_label }}">Opmerkingen</label>
+            {{ form.notes }}
+            {{ form.notes.errors }}
+
+            <div class="mhav-flow-actions">
+                <button class="button button-primary" type="submit">Beschikbaarheid opslaan ✓</button>
+                <a class="button button-outline" href="{% url 'planning:trainer_seasons' %}">Annuleren</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script src="{% static 'js/mhav-trainer-availability.js' %}" defer></script>
+{% endblock %}

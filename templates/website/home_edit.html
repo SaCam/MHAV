@@ -1,36 +1,99 @@
 {% extends 'base.html' %}
-{% block title %}Homepage bewerken | MHAV{% endblock %}
+{% block title %}
+    Homepage bewerken | MHAV
+{% endblock %}
 {% block content %}
-<section class="mhav-editor-heading"><div class="container"><a href="{% url 'website:home' %}" class="text-link">← Terug naar homepage</a><span class="eyebrow">WEBSITE BEHEER</span><h1>Homepage bewerken</h1><p>Pas teksten en foto's aan. Na opslaan zie je de wijzigingen meteen op de gewone website.</p></div></section>
-<section class="section"><div class="container mhav-editor-wrap">
-<form method="post" enctype="multipart/form-data" class="mhav-editor-form">{% csrf_token %}
-{% if can_text %}
-<fieldset><legend>01 — Welkom</legend>
-<div class="mhav-editor-field">{{ text_form.hero_title.label_tag }}{{ text_form.hero_title }}{{ text_form.hero_title.errors }}</div>
-<div class="mhav-editor-field">{{ text_form.hero_intro.label_tag }}{{ text_form.hero_intro }}{{ text_form.hero_intro.errors }}</div>
-</fieldset>
-<fieldset><legend>02 — Over onze vereniging</legend>
-<div class="mhav-editor-field">{{ text_form.about_title.label_tag }}{{ text_form.about_title }}{{ text_form.about_title.errors }}</div>
-<div class="mhav-editor-field">{{ text_form.about_paragraph_1.label_tag }}{{ text_form.about_paragraph_1 }}{{ text_form.about_paragraph_1.errors }}</div>
-<div class="mhav-editor-field">{{ text_form.about_paragraph_2.label_tag }}{{ text_form.about_paragraph_2 }}{{ text_form.about_paragraph_2.errors }}</div>
-</fieldset>
-<fieldset><legend>03 — Contactblok</legend>
-<div class="mhav-editor-field">{{ text_form.contact_title.label_tag }}{{ text_form.contact_title }}{{ text_form.contact_title.errors }}</div>
-<div class="mhav-editor-field">{{ text_form.contact_intro.label_tag }}{{ text_form.contact_intro }}{{ text_form.contact_intro.errors }}</div>
-</fieldset>
-{% endif %}
-{% if can_photos %}
-<fieldset><legend>04 — Foto's</legend><p class="mhav-editor-hint">Laat een fotoveld leeg om de bestaande foto te behouden.</p>
-{% if hero_photo.image %}<img class="mhav-editor-preview" src="{{ hero_photo.image.url }}" alt="Huidige hoofdfoto">{% endif %}
-<div class="mhav-editor-field">{{ photo_form.hero_image.label_tag }}{{ photo_form.hero_image }}{{ photo_form.hero_image.errors }}</div>
-<div class="mhav-editor-field">{{ photo_form.hero_alt.label_tag }}{{ photo_form.hero_alt }}{{ photo_form.hero_alt.errors }}</div>
-{% if about_photo.image %}<img class="mhav-editor-preview" src="{{ about_photo.image.url }}" alt="Huidige foto Over ons">{% endif %}
-<div class="mhav-editor-field">{{ photo_form.about_image.label_tag }}{{ photo_form.about_image }}{{ photo_form.about_image.errors }}</div>
-<div class="mhav-editor-field">{{ photo_form.about_alt.label_tag }}{{ photo_form.about_alt }}{{ photo_form.about_alt.errors }}</div>
-</fieldset>
-{% endif %}
-<div class="mhav-editor-actions"><a class="button button-outline" href="{% url 'website:home' %}">Annuleren</a><button class="button button-primary" type="submit">Wijzigingen opslaan ✓</button></div>
-</form>
-<aside class="mhav-editor-aside"><h2>Zo werkt het</h2><p>Je bewerkt hier de inhoud van de echte homepage, in de vertrouwde MHAV-opmaak.</p><p>Na opslaan ga je terug naar de homepage en zie je direct het resultaat.</p><p>De foto's worden geüpload naar dezelfde opslag als voorheen. Je hoeft Django Admin niet te openen.</p></aside>
-</div></section>
+    <section class="mhav-editor-heading">
+        <div class="container">
+            <a href="{% url 'website:home' %}" class="text-link">← Terug naar homepage</a><span class="eyebrow">WEBSITE BEHEER</span>
+            <h1>
+                Homepage bewerken
+            </h1>
+            <p>
+                Pas teksten en foto's aan. Na opslaan zie je de wijzigingen meteen op de gewone website.
+            </p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container mhav-editor-wrap">
+            <form method="post" enctype="multipart/form-data" class="mhav-editor-form">
+                {% csrf_token %}
+                {% if can_text %}
+                    <fieldset>
+                        <legend>01 — Welkom</legend>
+                        <div class="mhav-editor-field">
+                            {{ text_form.hero_title.label_tag }}{{ text_form.hero_title }}{{ text_form.hero_title.errors }}
+                        </div>
+                        <div class="mhav-editor-field">
+                            {{ text_form.hero_intro.label_tag }}{{ text_form.hero_intro }}{{ text_form.hero_intro.errors }}
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>02 — Over onze vereniging</legend>
+                        <div class="mhav-editor-field">
+                            {{ text_form.about_title.label_tag }}{{ text_form.about_title }}{{ text_form.about_title.errors }}
+                        </div>
+                        <div class="mhav-editor-field">
+                            {{ text_form.about_paragraph_1.label_tag }}{{ text_form.about_paragraph_1 }}{{ text_form.about_paragraph_1.errors }}
+                        </div>
+                        <div class="mhav-editor-field">
+                            {{ text_form.about_paragraph_2.label_tag }}{{ text_form.about_paragraph_2 }}{{ text_form.about_paragraph_2.errors }}
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>03 — Contactblok</legend>
+                        <div class="mhav-editor-field">
+                            {{ text_form.contact_title.label_tag }}{{ text_form.contact_title }}{{ text_form.contact_title.errors }}
+                        </div>
+                        <div class="mhav-editor-field">
+                            {{ text_form.contact_intro.label_tag }}{{ text_form.contact_intro }}{{ text_form.contact_intro.errors }}
+                        </div>
+                    </fieldset>
+                {% endif %}
+                {% if can_photos %}
+                    <fieldset>
+                        <legend>04 — Foto's</legend>
+                        <p class="mhav-editor-hint">
+                            Laat een fotoveld leeg om de bestaande foto te behouden.
+                        </p>
+                        {% if hero_photo.image %}
+                            <img class="mhav-editor-preview" src="{{ hero_photo.image.url }}" alt="Huidige hoofdfoto">
+                        {% endif %}
+                        <div class="mhav-editor-field">
+                            {{ photo_form.hero_image.label_tag }}{{ photo_form.hero_image }}{{ photo_form.hero_image.errors }}
+                        </div>
+                        <div class="mhav-editor-field">
+                            {{ photo_form.hero_alt.label_tag }}{{ photo_form.hero_alt }}{{ photo_form.hero_alt.errors }}
+                        </div>
+                        {% if about_photo.image %}
+                            <img class="mhav-editor-preview" src="{{ about_photo.image.url }}" alt="Huidige foto Over ons">
+                        {% endif %}
+                        <div class="mhav-editor-field">
+                            {{ photo_form.about_image.label_tag }}{{ photo_form.about_image }}{{ photo_form.about_image.errors }}
+                        </div>
+                        <div class="mhav-editor-field">
+                            {{ photo_form.about_alt.label_tag }}{{ photo_form.about_alt }}{{ photo_form.about_alt.errors }}
+                        </div>
+                    </fieldset>
+                {% endif %}
+                <div class="mhav-editor-actions">
+                    <a class="button button-outline" href="{% url 'website:home' %}">Annuleren</a><button class="button button-primary" type="submit">Wijzigingen opslaan ✓</button>
+                </div>
+            </form>
+            <aside class="mhav-editor-aside">
+                <h2>
+                    Zo werkt het
+                </h2>
+                <p>
+                    Je bewerkt hier de inhoud van de echte homepage, in de vertrouwde MHAV-opmaak.
+                </p>
+                <p>
+                    Na opslaan ga je terug naar de homepage en zie je direct het resultaat.
+                </p>
+                <p>
+                    De foto's worden geüpload naar dezelfde opslag als voorheen. Je hoeft Django Admin niet te openen.
+                </p>
+            </aside>
+        </div>
+    </section>
 {% endblock %}

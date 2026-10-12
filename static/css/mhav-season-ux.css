@@ -1,0 +1,63 @@
+/* v21a UX: season and trainer availability */
+.mhav-flow-wrap { max-width: 1120px; margin-inline: auto; }
+.mhav-flow-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.mhav-flow-subtitle { color: #64766a; margin: .35rem 0 0; }
+.mhav-flow-panel { background: #fff; border: 1px solid #dce7df; border-radius: 18px; padding: clamp(1.1rem, 3vw, 2rem); margin-bottom: 1.5rem; box-shadow: 0 10px 30px #173e2709; }
+.mhav-flow-panel h2 { margin: 0 0 1rem; color: #183d2c; }
+.mhav-flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 1rem; }
+.mhav-flow-card { display: block; border: 1px solid #dce7df; background: #fff; border-radius: 14px; padding: 1.2rem; text-decoration: none; color: inherit; }
+.mhav-flow-card:hover { border-color: #236b4b; }
+.mhav-flow-card h3 { margin: .25rem 0 .6rem; color: #183d2c; }
+.mhav-flow-card p { margin: .4rem 0; }
+.mhav-flow-tag { display: inline-flex; border-radius: 999px; padding: .35rem .75rem; font-size: .88rem; font-weight: 700; background: #e9f2ec; color: #21583d; }
+.mhav-flow-tag--pending { background: #fff1d0; color: #775409; }
+.mhav-flow-tag--no { background: #fce9e7; color: #983a31; }
+.mhav-flow-tag--maybe { background: #fff1d0; color: #775409; }
+.mhav-flow-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin: 1rem 0 1.5rem; }
+.mhav-flow-choice { display: flex; align-items: flex-start; gap: .7rem; cursor: pointer; border: 2px solid #dce7df; border-radius: 14px; padding: 1rem; background: #fff; }
+.mhav-flow-choice:has(input:checked) { border-color: #236b4b; background: #f1f8f3; }
+.mhav-flow-choice input { margin-top: .25rem; accent-color: #236b4b; }
+.mhav-flow-choice strong { display: block; }
+.mhav-flow-choice small { display: block; color: #66776b; margin-top: .25rem; }
+.mhav-date-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: .7rem; margin-top: 1rem; }
+.mhav-date-tile { display: flex; gap: .7rem; align-items: center; border: 1px solid #dce7df; border-radius: 12px; padding: .85rem; background: #f8faf8; cursor: pointer; }
+.mhav-date-tile input { width: 18px; height: 18px; accent-color: #ae4339; }
+.mhav-date-symbol { font-size: 1.35rem; font-weight: 800; width: 1.4rem; text-align: center; }
+.mhav-date-tile[data-state="yes"] { background: #eef8f0; border-color: #b7ddc3; }
+.mhav-date-tile[data-state="yes"] .mhav-date-symbol { color: #207444; }
+.mhav-date-tile[data-state="no"] { background: #fff0ee; border-color: #edc5c0; }
+.mhav-date-tile[data-state="no"] .mhav-date-symbol { color: #ad382f; }
+.mhav-date-tile[data-state="maybe"] { background: #fff8e8; border-color: #f0dba8; }
+.mhav-date-tile[data-state="maybe"] .mhav-date-symbol { color: #a67813; }
+.mhav-flow-field { display: block; font-weight: 700; margin: 1.5rem 0 .4rem; }
+.mhav-flow-panel textarea { display: block; width: 100%; max-width: 750px; min-height: 100px; border: 1px solid #bdcfc1; border-radius: 10px; padding: .8rem; font: inherit; }
+.mhav-flow-actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.5rem; align-items: center; }
+.mhav-flow-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; margin-bottom: 1.5rem; }
+.mhav-flow-stat { background: #f3f8f4; border-radius: 12px; padding: 1rem; }
+.mhav-flow-stat strong { display: block; font-size: 1.65rem; color: #183d2c; }
+.mhav-flow-stat span { color: #586b5e; }
+.mhav-mini-dates { display: flex; flex-wrap: wrap; gap: .35rem; margin: .7rem 0; }
+.mhav-mini-date { padding: .35rem .5rem; border-radius: 7px; font-size: .85rem; font-weight: 700; }
+.mhav-mini-date--yes { color: #236b4b; background: #e8f5eb; }
+.mhav-mini-date--no { color: #a23b32; background: #fbe9e7; }
+.mhav-mini-date--maybe { color: #8a620f; background: #fff2d6; }
+@media (max-width: 650px) { .mhav-flow-choices { grid-template-columns: 1fr; } .mhav-flow-panel { padding: 1rem; } }
+
+/* v21a.2 — individual trainer availability */
+.mhav-availability-modes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mhav-availability-legend { display: flex; flex-wrap: wrap; gap: .6rem 1.3rem; margin-top: 1rem; color: #526a5b; font-size: .9rem; }
+.mhav-availability-grid { grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); }
+.mhav-availability-tile { display: flex; flex-direction: column; align-items: stretch; gap: .8rem; cursor: default; }
+.mhav-availability-tile-heading { display: flex; align-items: center; gap: .7rem; }
+.mhav-availability-tile-heading small { display: block; color: #526a5b; margin-top: .2rem; }
+.mhav-availability-tile[data-state="unset"] { background: #f6f7f7; border-color: #d5dcda; }
+.mhav-availability-tile[data-state="unset"] .mhav-date-symbol { color: #64736d; }
+.mhav-availability-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: .35rem; }
+.mhav-availability-buttons button { min-height: 43px; border-radius: 9px; border: 1px solid #ccd8d0; background: white; color: #425c4c; font-size: 1.2rem; font-weight: 700; cursor: pointer; }
+.mhav-availability-buttons button[data-set-state="yes"][aria-pressed="true"] { background: #d4efdc; border: 2px solid #207444; color: #185e36; }
+.mhav-availability-buttons button[data-set-state="no"][aria-pressed="true"] { background: #f8dcd9; border: 2px solid #ad382f; color: #90251e; }
+.mhav-availability-buttons button[data-set-state="maybe"][aria-pressed="true"] { background: #fff0c4; border: 2px solid #a67813; color: #75510c; }
+.mhav-availability-buttons button:focus-visible { outline: 3px solid #226b4c; outline-offset: 2px; }
+.mhav-availability-buttons button:disabled { cursor: default; opacity: .65; }
+.mhav-mini-date--unset { background: #edf0ee; color: #64736d; }
+@media (max-width: 700px) { .mhav-availability-modes { grid-template-columns: 1fr; } }

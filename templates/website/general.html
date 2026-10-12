@@ -1,11 +1,92 @@
 {% extends "base.html" %}
-{% block title %}Algemeen | MHAV{% endblock %}
+{% block title %}
+    Algemeen | MHAV
+{% endblock %}
 {% block content %}
-<section class="editorial-hero editorial-hero--cream"><div class="container editorial-hero__grid">
-<div class="editorial-hero__copy"><span class="editorial-kicker">WELKOM BIJ DE VERENIGING</span><h1>Meer dan<br><em>een hondenschool.</em></h1><p>MHAV is een plek waar mensen en honden samen leren, trainen en plezier maken.</p><div class="editorial-actions"><a class="button button-primary" href="#over-mhav">Leer ons kennen ↓</a></div></div>
-<div class="editorial-hero__image">{% if photo.image %}<img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:'Onze vereniging' }}">{% else %}<div class="editorial-placeholder"><span>♥</span><small>Een plek voor mens en hond</small></div>{% endif %}<div class="editorial-image-caption">MIJN HOND ALS VRIEND</div></div>
-</div></section>
-<section class="editorial-section" id="over-mhav"><div class="container editorial-two-col"><div><span class="editorial-kicker">WIE WE ZIJN</span><h2>Een vereniging met aandacht voor de band tussen mens en hond.</h2></div><div class="editorial-prose"><p>Bij MHAV staat samen trainen centraal. We geloven dat vertrouwen, duidelijke communicatie en plezier de basis vormen voor een prettige samenwerking.</p><p>Op deze pagina vind je meer over de vereniging en de praktische afspraken.</p></div></div></section>
-<section class="editorial-section editorial-section--soft"><div class="container"><div class="editorial-section-title"><span class="editorial-kicker">HANDIG OM TE WETEN</span><h2>Alles over MHAV.</h2></div><div class="editorial-topic-grid">{% for page in pages %}<a href="{% url 'website:page' page.slug %}" class="editorial-topic"><span class="editorial-topic__number">{{ forloop.counter|stringformat:"02d" }}</span><h3>{{ page.title }}</h3><p>{{ page.introduction|truncatewords:20 }}</p><span class="editorial-topic__arrow">Lees verder ↗</span></a>{% empty %}<p>Meer informatie volgt binnenkort.</p>{% endfor %}</div></div></section>
-<section class="editorial-section"><div class="container editorial-feature"><div><span class="editorial-kicker">WE HELPEN JE GRAAG</span><h2>Een vraag over onze vereniging?</h2><p>Neem contact op met MHAV voor meer informatie.</p></div><a class="button button-primary" href="{% url 'website:contact' %}">Contact ↗</a></div></section>
+    <section class="editorial-hero editorial-hero--cream">
+        <div class="container editorial-hero__grid">
+            <div class="editorial-hero__copy">
+                <span class="editorial-kicker">WELKOM BIJ DE VERENIGING</span>
+                <h1>
+                    Meer dan<br><em>een hondenschool.</em>
+                </h1>
+                <p>
+                    MHAV is een plek waar mensen en honden samen leren, trainen en plezier maken.
+                </p>
+                <div class="editorial-actions">
+                    <a class="button button-primary" href="#over-mhav">Leer ons kennen ↓</a>
+                </div>
+            </div>
+            <div class="editorial-hero__image">
+                {% if photo.image %}
+                    <img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:'Onze vereniging' }}">
+                {% else %}
+                    <div class="editorial-placeholder">
+                        <span>♥</span><small>Een plek voor mens en hond</small>
+                    </div>
+                {% endif %}
+                <div class="editorial-image-caption">
+                    MIJN HOND ALS VRIEND
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="editorial-section" id="over-mhav">
+        <div class="container editorial-two-col">
+            <div>
+                <span class="editorial-kicker">WIE WE ZIJN</span>
+                <h2>
+                    Een vereniging met aandacht voor de band tussen mens en hond.
+                </h2>
+            </div>
+            <div class="editorial-prose">
+                <p>
+                    Bij MHAV staat samen trainen centraal. We geloven dat vertrouwen, duidelijke communicatie en plezier de basis vormen voor een prettige samenwerking.
+                </p>
+                <p>
+                    Op deze pagina vind je meer over de vereniging en de praktische afspraken.
+                </p>
+            </div>
+        </div>
+    </section>
+    <section class="editorial-section editorial-section--soft">
+        <div class="container">
+            <div class="editorial-section-title">
+                <span class="editorial-kicker">HANDIG OM TE WETEN</span>
+                <h2>
+                    Alles over MHAV.
+                </h2>
+            </div>
+            <div class="editorial-topic-grid">
+                {% for page in pages %}
+                    <a href="{% url 'website:page' page.slug %}" class="editorial-topic"><span class="editorial-topic__number">{{ forloop.counter|stringformat:"02d" }}</span>
+                    <h3>
+                        {{ page.title }}
+                    </h3>
+                    <p>
+                        {{ page.introduction|truncatewords:20 }}
+                    </p>
+                    <span class="editorial-topic__arrow">Lees verder ↗</span></a>
+                {% empty %}
+                    <p>
+                        Meer informatie volgt binnenkort.
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    <section class="editorial-section">
+        <div class="container editorial-feature">
+            <div>
+                <span class="editorial-kicker">WE HELPEN JE GRAAG</span>
+                <h2>
+                    Een vraag over onze vereniging?
+                </h2>
+                <p>
+                    Neem contact op met MHAV voor meer informatie.
+                </p>
+            </div>
+            <a class="button button-primary" href="{% url 'website:contact' %}">Contact ↗</a>
+        </div>
+    </section>
 {% endblock %}

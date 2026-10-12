@@ -776,3 +776,28 @@ img {
         transition:none
     }
 }
+
+/* MHAV v21d: warmer editorial public-site refresh, inspired by a friendly service website. */
+:root{--cream:#f5f5eb;--paper:#fffdf8;--mint:#eaf1e6;--radius:26px}
+.site-header{background:#fffdf8;border-bottom:1px solid #e8ede3}
+.header-inner{min-height:98px}
+.brand-mark{border-radius:50%;transform:rotate(-9deg);box-shadow:0 8px 22px #214c3925}
+.main-nav a{transition:color .2s ease,background .2s ease}
+.hero{background:radial-gradient(ellipse at 80% 20%,#e5eee0 0%,transparent 52%),linear-gradient(120deg,#f8f7ed,#edf2e9)}
+.hero-grid{gap:clamp(30px,5vw,90px);padding-block:clamp(65px,8vw,115px)}
+.hero h1{letter-spacing:-.045em;line-height:1.09}
+.hero-copy>p{line-height:1.85;max-width:55ch}
+.hero-visual{border-radius:220px 220px 28px 28px;box-shadow:0 25px 60px #173e2d16}
+.hero-sticker{background:#fffaf0;box-shadow:0 16px 45px #173e2d25}
+.button{border-radius:999px;padding-inline:1.6rem;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
+.button:hover{transform:translateY(-2px);box-shadow:0 9px 22px #173e2d19}
+.features{background:#fffdf8}
+.feature{border-radius:20px}
+.section{scroll-margin-top:25px}
+.about-visual img{border-radius:24px 150px 24px 24px}
+.info-card{border-radius:26px;box-shadow:0 12px 32px #173e2d0a;transition:transform .2s ease,box-shadow .2s ease}
+.info-card:hover{transform:translateY(-4px);box-shadow:0 20px 38px #173e2d14}
+.page-intro{background:linear-gradient(115deg,#f5f6eb,#eaf1e6)}
+.page-next-step{border-radius:25px}
+@media(prefers-reduced-motion:reduce){.button,.info-card,.main-nav a{transition:none}.button:hover,.info-card:hover{transform:none}}
+@media(max-width:800px){.hero-grid{padding-block:55px}.hero-visual{border-radius:140px 140px 22px 22px}.hero-sticker{left:0}}

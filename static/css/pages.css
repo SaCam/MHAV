@@ -140,3 +140,10 @@
 .mhav-catalogue-form .mhav-inline-field label{color:#153e2e}
 .mhav-catalogue-form input[type=checkbox]{width:auto;accent-color:#245b35}
 @media(max-width:700px){.mhav-catalogue-item{flex-direction:column;align-items:stretch;padding:22px}.mhav-catalogue-buttons{flex-wrap:wrap}.mhav-course-manage-action{justify-content:flex-start}}
+
+/* Course catalogue: separate accessible action from the course information link. */
+.mhav-course-entry { margin-bottom: 1.1rem; }
+.mhav-course-entry__apply { display: inline-flex; margin: .35rem 0 .25rem 3.8rem; font-weight: 700; color: #22503e; text-decoration: underline; text-underline-offset: .2em; }
+.mhav-course-entry__apply:hover { color: #122d22; }
+.mhav-course-register { margin-bottom: 1.5rem; }
+@media(max-width:640px){ .mhav-course-entry__apply { margin-left: 1rem; } }

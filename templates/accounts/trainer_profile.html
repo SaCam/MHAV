@@ -1,12 +1,70 @@
 {% extends "base.html" %}
-{% block title %}Trainersprofiel | MHAV{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="/static/css/mhav-beheer.css">{% endblock %}
+{% block title %}
+    Trainersprofiel | MHAV
+{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="/static/css/mhav-beheer.css">
+{% endblock %}
 {% block content %}
-<section class="page-intro"><div class="container"><a class="text-link" href="{% if target %}{% url 'accounts:beheer_user_edit' target.pk %}{% else %}{% url 'accounts:dashboard' %}{% endif %}">← Terug</a><h1>{% if target %}Trainersprofiel beheren{% else %}Mijn trainersprofiel{% endif %}</h1><p>Stel jezelf voor aan de bezoekers van Mijn Hond Als Vriend.</p></div></section>
-<section class="section"><div class="container"><form class="mhav-editor" method="post" enctype="multipart/form-data">{% csrf_token %}
-{% if trainer_profile.photo %}<p><img src="{{ trainer_profile.photo.url }}" alt="Huidige portretfoto" style="max-width:220px;max-height:240px;object-fit:cover;border-radius:14px"></p>{% endif %}
-<div class="mhav-fields">{% for field in form %}<div class="form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}</div>
-{% if visibility_form %}<h2>Publicatie</h2><p>Alleen beheerders kunnen bepalen of het profiel zichtbaar is.</p><div class="mhav-fields">{% for field in visibility_form %}<div class="form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}</div>{% endif %}
-{% if not visibility_form %}<p class="mhav-note">{% if trainer_profile.is_visible %}Je profiel is zichtbaar op de pagina De instructeurs.{% else %}Je profiel is nog niet gepubliceerd. Een beheerder kan het zichtbaar maken.{% endif %}</p>{% endif %}
-<div class="mhav-actions"><button class="button button-primary" type="submit">Profiel opslaan</button></div></form></div></section>
+    <section class="page-intro">
+        <div class="container">
+            <a class="text-link" href="{% if target %}{% url 'accounts:beheer_user_edit' target.pk %}{% else %}{% url 'accounts:dashboard' %}{% endif %}">← Terug</a>
+            <h1>
+                {% if target %}
+                    Trainersprofiel beheren
+                {% else %}
+                    Mijn trainersprofiel
+                {% endif %}
+            </h1>
+            <p>
+                Stel jezelf voor aan de bezoekers van Mijn Hond Als Vriend.
+            </p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <form class="mhav-editor" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% if trainer_profile.photo %}
+                    <p>
+                        <img src="{{ trainer_profile.photo.url }}" alt="Huidige portretfoto" style="max-width:220px;max-height:240px;object-fit:cover;border-radius:14px">
+                    </p>
+                {% endif %}
+                <div class="mhav-fields">
+                    {% for field in form %}
+                        <div class="form-field">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if visibility_form %}
+                    <h2>
+                        Publicatie
+                    </h2>
+                    <p>
+                        Alleen beheerders kunnen bepalen of het profiel zichtbaar is.
+                    </p>
+                    <div class="mhav-fields">
+                        {% for field in visibility_form %}
+                            <div class="form-field">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if not visibility_form %}
+                    <p class="mhav-note">
+                        {% if trainer_profile.is_visible %}
+                            Je profiel is zichtbaar op de pagina De instructeurs.
+                        {% else %}
+                            Je profiel is nog niet gepubliceerd. Een beheerder kan het zichtbaar maken.
+                        {% endif %}
+                    </p>
+                {% endif %}
+                <div class="mhav-actions">
+                    <button class="button button-primary" type="submit">Profiel opslaan</button>
+                </div>
+            </form>
+        </div>
+    </section>
 {% endblock %}

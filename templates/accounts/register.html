@@ -1,4 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Registreren | MHAV{% endblock %}
-{% block content %}<section class="page-intro"><div class="container"><h1>Account aanmaken</h1><p>Registreer met je e-mailadres en wachtwoord. Het bestuur bevestigt daarna je lidmaatschap.</p></div></section>
-<section class="section"><div class="container"><form method="post" class="content-form">{% csrf_token %}{% for field in form %}<div class="form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}{% if field.help_text %}<small>{{ field.help_text|safe }}</small>{% endif %}</div>{% endfor %}<button class="button button-primary" type="submit">Registreren</button></form></div></section>{% endblock %}
+{% block title %}
+    Registreren | MHAV
+{% endblock %}
+{% block content %}
+    <section class="page-intro">
+        <div class="container">
+            <h1>
+                Account aanmaken
+            </h1>
+            <p>
+                Registreer met je e-mailadres en wachtwoord. Het bestuur bevestigt daarna je lidmaatschap.
+            </p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <form method="post" class="content-form">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+                        {% for error in field.errors %}
+                            <p class="form-error">
+                                {{ error }}
+                            </p>
+                        {% endfor %}
+                        {% if field.help_text %}
+                            <small>{{ field.help_text|safe }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button class="button button-primary" type="submit">Registreren</button>
+            </form>
+        </div>
+    </section>
+{% endblock %}

@@ -1,26 +1,78 @@
 {% extends "base.html" %}
-{% block title %}{{ title }} | MHAV{% endblock %}
+{% block title %}
+    {{ title }} | MHAV
+{% endblock %}
 {% block content %}
-<section class="mhav-section-hero"><div class="container mhav-section-layout">
-  <div class="mhav-section-intro"><span class="eyebrow">{{ eyebrow }}</span><h1>{{ title }}</h1><p>{{ lead }}</p>
-    <a class="button button-primary" href="{% url 'website:contact' %}">Stel ons een vraag ↗</a>
-  </div>
-  <div class="mhav-section-photo">
-    {% if photo.image %}<img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:title }}">{% else %}
-    <div class="mhav-photo-placeholder"><span aria-hidden="true">✦</span><strong>Samen met je hond</strong><small>Foto binnenkort beschikbaar</small></div>
-    {% endif %}
-  </div>
-</div></section>
-<section class="section"><div class="container">
-  <div class="section-heading"><div><span class="eyebrow">ONTDEK MEER</span>
-    <h2>{% if section == "courses" %}Onze cursussen{% elif section == "phv" %}PHV bij MHAV{% else %}Meer informatie{% endif %}</h2></div></div>
-  <div class="info-card-grid">{% for page in pages %}
-    <article class="info-card"><span class="info-card-number">{{ forloop.counter|stringformat:"02d" }}</span>
-      <h3>{{ page.title }}</h3><p>{{ page.introduction }}</p>
-      <a class="text-link" href="{% url 'website:page' page.slug %}">Lees verder →</a>
-    </article>
-    {% empty %}<p>De informatie wordt binnenkort aangevuld.</p>{% endfor %}
-  </div>
-</div></section>
-<section class="mhav-wide-cta"><div class="container"><div><h2>Een vraag over {{ title|lower }}?</h2><p>We helpen je graag verder.</p></div><a class="button button-light" href="{% url 'website:contact' %}">Neem contact op →</a></div></section>
+    <section class="mhav-section-hero">
+        <div class="container mhav-section-layout">
+            <div class="mhav-section-intro">
+                <span class="eyebrow">{{ eyebrow }}</span>
+                <h1>
+                    {{ title }}
+                </h1>
+                <p>
+                    {{ lead }}
+                </p>
+                <a class="button button-primary" href="{% url 'website:contact' %}">Stel ons een vraag ↗</a>
+            </div>
+            <div class="mhav-section-photo">
+                {% if photo.image %}
+                    <img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:title }}">
+                {% else %}
+                    <div class="mhav-photo-placeholder">
+                        <span aria-hidden="true">✦</span><strong>Samen met je hond</strong><small>Foto binnenkort beschikbaar</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">ONTDEK MEER</span>
+                    <h2>
+                        {% if section == "courses" %}
+                            Onze cursussen
+                        {% elif section == "phv" %}
+                            PHV bij MHAV
+                        {% else %}
+                            Meer informatie
+                        {% endif %}
+                    </h2>
+                </div>
+            </div>
+            <div class="info-card-grid">
+                {% for page in pages %}
+                    <article class="info-card">
+                        <span class="info-card-number">{{ forloop.counter|stringformat:"02d" }}</span>
+                        <h3>
+                            {{ page.title }}
+                        </h3>
+                        <p>
+                            {{ page.introduction }}
+                        </p>
+                        <a class="text-link" href="{% url 'website:page' page.slug %}">Lees verder →</a>
+                    </article>
+                {% empty %}
+                    <p>
+                        De informatie wordt binnenkort aangevuld.
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    <section class="mhav-wide-cta">
+        <div class="container">
+            <div>
+                <h2>
+                    Een vraag over {{ title|lower }}?
+                </h2>
+                <p>
+                    We helpen je graag verder.
+                </p>
+            </div>
+            <a class="button button-light" href="{% url 'website:contact' %}">Neem contact op →</a>
+        </div>
+    </section>
 {% endblock %}

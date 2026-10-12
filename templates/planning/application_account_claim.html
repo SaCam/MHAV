@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}
+    MHAV-account aanmaken
+{% endblock %}
+{% block content %}
+    <section class="section">
+        <div class="container mhav-registration-wrap">
+            <h1>
+                MHAV-account aanmaken
+            </h1>
+            {% if already_linked %}
+                <p>
+                    Deze aanmelding is al gekoppeld aan een account. <a href="{% url 'accounts:login' %}">Inloggen</a>
+                </p>
+            {% elif existing %}
+                <p>
+                    Er bestaat al een account voor dit e-mailadres. <a href="{% url 'accounts:login' %}">Log in</a> of <a href="{% url 'accounts:password_reset' %}">herstel je wachtwoord</a>. De cursusadministratie kan je aanmelding aan je bestaande account koppelen.
+                </p>
+            {% else %}
+                <p>
+                    Je e-mailadres is bevestigd. Kies nu een wachtwoord. Je cursusaanvraag blijft behouden.
+                </p>
+                <form method="post" class="mhav-registration">
+                    {% csrf_token %}
+                    {{ form.as_p }}<button class="button button-primary" type="submit">Account aanmaken</button>
+                </form>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

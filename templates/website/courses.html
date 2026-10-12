@@ -1,16 +1,265 @@
 {% extends "base.html" %}
+
 {% block title %}Cursussen | MHAV{% endblock %}
+
 {% block content %}
-<section class="editorial-hero editorial-hero--cream"><div class="container editorial-hero__grid">
-<div class="editorial-hero__copy" id="hero"><span class="editorial-kicker">SAMEN LEREN, SAMEN GROEIEN</span>{% if can_edit_hero and edit_section != "hero" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=hero#hero">✎ Bewerken</a></div>{% endif %}{% if edit_section == "hero" %}<form class="mhav-inline-form" method="post" enctype="multipart/form-data" action="{% url 'website:courses_save' %}">{% csrf_token %}<input type="hidden" name="section" value="hero"><div class="mhav-inline-field mhav-inline-title">{{ section_form.hero_first.label_tag }}{{ section_form.hero_first }}{{ section_form.hero_first.errors }}</div><div class="mhav-inline-field mhav-inline-title">{{ section_form.hero_em.label_tag }}{{ section_form.hero_em }}{{ section_form.hero_em.errors }}</div><div class="mhav-inline-field">{{ section_form.hero_lead.label_tag }}{{ section_form.hero_lead }}{{ section_form.hero_lead.errors }}</div>{% if can_photo %}<div class="mhav-inline-field mhav-photo-field"><label for="courses-hero-image">Foto vervangen</label><input id="courses-hero-image" type="file" name="image" accept="image/*"><small>Laat leeg om de huidige foto te behouden.</small></div><div class="mhav-inline-field"><label for="courses-hero-alt">Beschrijving van de foto</label><input id="courses-hero-alt" type="text" name="alt_text" maxlength="200" value="{{ photo.alt_text|default:'' }}"></div>{% endif %}<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:courses' %}#hero">Annuleren</a></div></form>{% else %}<h1>{{ copy.hero_first }}<br><em>{{ copy.hero_em }}</em></h1><p>{{ copy.hero_lead }}</p>{% endif %}<div class="editorial-actions"><a class="button button-primary" href="#alle-cursussen">Bekijk cursussen ↓</a><a class="editorial-text-link" href="{% url 'website:page' 'inschrijven' %}">Hoe werkt inschrijven? ↗</a></div></div>
-<div class="editorial-hero__image">{% if photo.image %}<img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:'Hondentraining bij MHAV' }}">{% else %}<div class="editorial-placeholder"><span>MHAV</span><small>Foto volgt binnenkort</small></div>{% endif %}<div class="editorial-image-caption">SAMEN OP HET TRAININGSVELD</div></div>
-</div></section>
-<section class="editorial-section" id="intro"><div class="container editorial-two-col"><div><span class="editorial-kicker">DE JUISTE START</span><h2>{% if edit_section == "intro" %}Inleiding bewerken{% else %}{{ copy.intro_title }}{% endif %}</h2></div><div class="editorial-prose">{% if can_text and edit_section != "intro" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=intro#intro">✎ Bewerken</a></div>{% endif %}{% if edit_section == "intro" %}<form class="mhav-inline-form" method="post" action="{% url 'website:courses_save' %}">{% csrf_token %}<input type="hidden" name="section" value="intro"><div class="mhav-inline-field mhav-inline-title">{{ section_form.intro_title.label_tag }}{{ section_form.intro_title }}{{ section_form.intro_title.errors }}</div><div class="mhav-inline-field">{{ section_form.intro_p1.label_tag }}{{ section_form.intro_p1 }}{{ section_form.intro_p1.errors }}</div><div class="mhav-inline-field">{{ section_form.intro_p2.label_tag }}{{ section_form.intro_p2 }}{{ section_form.intro_p2.errors }}</div><div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:courses' %}#intro">Annuleren</a></div></form>{% else %}<p>{{ copy.intro_p1 }}</p><p>{{ copy.intro_p2 }}</p>{% endif %}</div></div></section>
-<section class="editorial-section editorial-section--soft" id="alle-cursussen"><div class="container"><div class="editorial-section-title"><span class="editorial-kicker">ONS AANBOD</span><h2>{{ copy.list_title }}</h2>{% if can_text and edit_section != "list" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=list#list">✎ Bewerken</a></div>{% endif %}{% if edit_section == "list" %}<form class="mhav-inline-form" method="post" action="{% url 'website:courses_save' %}">{% csrf_token %}<input type="hidden" name="section" value="list"><div class="mhav-inline-field mhav-inline-title">{{ section_form.list_title.label_tag }}{{ section_form.list_title }}{{ section_form.list_title.errors }}</div><div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:courses' %}#list">Annuleren</a></div></form>{% else %}{% endif %}</div>
-{% if can_manage_courses %}<div class="mhav-course-manage-action"><a class="button button-primary" href="{% url 'planning:overview' %}">⚙ Cursusadministratie ↗</a></div>{% endif %}
-<div class="editorial-course-list">{% for page in pages %}<a class="editorial-course" href="{% url 'website:page' page.slug %}"><span class="editorial-course__number">{{ forloop.counter|stringformat:"02d" }}</span><div><h3>{{ page.title }}</h3><p>{{ page.introduction|truncatewords:23 }}</p></div><span class="editorial-course__arrow">↗</span></a>{% empty %}<p>Het cursusaanbod wordt binnenkort gepubliceerd.</p>{% endfor %}</div></div></section>
-{% if published_groups %}<section class="editorial-section" id="lesgroepen"><div class="container"><span class="editorial-kicker">ACTUEEL CURSUSAANBOD</span><h2>Lesgroepen</h2><p>Lesgroepen uit gepubliceerde, actieve seizoenen.</p><div class="mhav-plan-grid">
-{% for group in published_groups %}<article class="mhav-plan-card"><h3><a href="{% url 'website:page' group.course.slug %}">{{ group.course.title }}</a></h3><p>{{ group.season.name }} · {{ group.name }}</p><p>{{ group.get_day_display }} · {{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }}</p><p>{% if group.trainer %}Instructeur: {{ group.trainer.get_full_name|default:group.trainer.email }}{% endif %}</p><p>{% if group.placed_count >= group.capacity %}Vol{% else %}{{ group.capacity|add:0 }} plaatsen totaal · {{ group.placed_count }} bezet{% endif %}</p></article>{% endfor %}
-</div></div></section>{% endif %}
-<section class="editorial-section" id="cta"><div class="container editorial-feature"><div><span class="editorial-kicker">MEEDOEN?</span>{% if can_text and edit_section != "cta" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=cta#cta">✎ Bewerken</a></div>{% endif %}{% if edit_section == "cta" %}<form class="mhav-inline-form" method="post" action="{% url 'website:courses_save' %}">{% csrf_token %}<input type="hidden" name="section" value="cta"><div class="mhav-inline-field mhav-inline-title">{{ section_form.cta_title.label_tag }}{{ section_form.cta_title }}{{ section_form.cta_title.errors }}</div><div class="mhav-inline-field">{{ section_form.cta_text.label_tag }}{{ section_form.cta_text }}{{ section_form.cta_text.errors }}</div><div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:courses' %}#cta">Annuleren</a></div></form>{% else %}<h2>{{ copy.cta_title }}</h2><p>{{ copy.cta_text }}</p>{% endif %}</div><a class="button button-primary" href="{% url 'website:page' 'inschrijven' %}">Inschrijven ↗</a></div></section>
+<section class="editorial-hero editorial-hero--cream">
+    <div class="container editorial-hero__grid">
+        <div class="editorial-hero__copy" id="hero">
+            <span class="editorial-kicker">SAMEN LEREN, SAMEN GROEIEN</span>
+
+            {% if can_edit_hero and edit_section != "hero" %}
+                <div class="mhav-section-edit">
+                    <a class="mhav-pencil" href="?edit=hero#hero">✎ Bewerken</a>
+                </div>
+            {% endif %}
+
+            {% if edit_section == "hero" %}
+                <form class="mhav-inline-form" method="post" enctype="multipart/form-data" action="{% url 'website:courses_save' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="section" value="hero">
+
+                    <div class="mhav-inline-field mhav-inline-title">
+                        {{ section_form.hero_first.label_tag }}
+                        {{ section_form.hero_first }}
+                        {{ section_form.hero_first.errors }}
+                    </div>
+                    <div class="mhav-inline-field mhav-inline-title">
+                        {{ section_form.hero_em.label_tag }}
+                        {{ section_form.hero_em }}
+                        {{ section_form.hero_em.errors }}
+                    </div>
+                    <div class="mhav-inline-field">
+                        {{ section_form.hero_lead.label_tag }}
+                        {{ section_form.hero_lead }}
+                        {{ section_form.hero_lead.errors }}
+                    </div>
+
+                    {% if can_photo %}
+                        <div class="mhav-inline-field mhav-photo-field">
+                            <label for="courses-hero-image">Foto vervangen</label>
+                            <input id="courses-hero-image" type="file" name="image" accept="image/*">
+                            <small>Laat leeg om de huidige foto te behouden.</small>
+                        </div>
+                        <div class="mhav-inline-field">
+                            <label for="courses-hero-alt">Beschrijving van de foto</label>
+                            <input id="courses-hero-alt" type="text" name="alt_text" maxlength="200" value="{{ photo.alt_text|default:'' }}">
+                        </div>
+                    {% endif %}
+
+                    <div class="mhav-inline-actions">
+                        <button class="button button-primary" type="submit">Opslaan ✓</button>
+                        <a class="button button-outline" href="{% url 'website:courses' %}#hero">Annuleren</a>
+                    </div>
+                </form>
+            {% else %}
+                <h1>{{ copy.hero_first }}<br><em>{{ copy.hero_em }}</em></h1>
+                <p>{{ copy.hero_lead }}</p>
+            {% endif %}
+
+            <div class="editorial-actions">
+                <a class="button button-primary" href="#alle-cursussen">Bekijk cursussen ↓</a>
+                <a class="editorial-text-link" href="{% url 'website:application' %}">Direct inschrijven ↗</a>
+            </div>
+        </div>
+
+        <div class="editorial-hero__image">
+            {% if photo.image %}
+                <img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:'Hondentraining bij MHAV' }}">
+            {% else %}
+                <div class="editorial-placeholder">
+                    <span>MHAV</span>
+                    <small>Foto volgt binnenkort</small>
+                </div>
+            {% endif %}
+            <div class="editorial-image-caption">SAMEN OP HET TRAININGSVELD</div>
+        </div>
+    </div>
+</section>
+
+<section class="editorial-section" id="intro">
+    <div class="container editorial-two-col">
+        <div>
+            <span class="editorial-kicker">DE JUISTE START</span>
+            <h2>
+                {% if edit_section == "intro" %}
+                    Inleiding bewerken
+                {% else %}
+                    {{ copy.intro_title }}
+                {% endif %}
+            </h2>
+        </div>
+
+        <div class="editorial-prose">
+            {% if can_text and edit_section != "intro" %}
+                <div class="mhav-section-edit">
+                    <a class="mhav-pencil" href="?edit=intro#intro">✎ Bewerken</a>
+                </div>
+            {% endif %}
+
+            {% if edit_section == "intro" %}
+                <form class="mhav-inline-form" method="post" action="{% url 'website:courses_save' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="section" value="intro">
+
+                    <div class="mhav-inline-field mhav-inline-title">
+                        {{ section_form.intro_title.label_tag }}
+                        {{ section_form.intro_title }}
+                        {{ section_form.intro_title.errors }}
+                    </div>
+                    <div class="mhav-inline-field">
+                        {{ section_form.intro_p1.label_tag }}
+                        {{ section_form.intro_p1 }}
+                        {{ section_form.intro_p1.errors }}
+                    </div>
+                    <div class="mhav-inline-field">
+                        {{ section_form.intro_p2.label_tag }}
+                        {{ section_form.intro_p2 }}
+                        {{ section_form.intro_p2.errors }}
+                    </div>
+                    <div class="mhav-inline-actions">
+                        <button class="button button-primary" type="submit">Opslaan ✓</button>
+                        <a class="button button-outline" href="{% url 'website:courses' %}#intro">Annuleren</a>
+                    </div>
+                </form>
+            {% else %}
+                <p>{{ copy.intro_p1 }}</p>
+                <p>{{ copy.intro_p2 }}</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="editorial-section editorial-section--soft" id="alle-cursussen">
+    <div class="container">
+        <div class="editorial-section-title">
+            <span class="editorial-kicker">ONS AANBOD</span>
+            <h2>{{ copy.list_title }}</h2>
+
+            {% if can_text and edit_section != "list" %}
+                <div class="mhav-section-edit">
+                    <a class="mhav-pencil" href="?edit=list#list">✎ Bewerken</a>
+                </div>
+            {% endif %}
+
+            {% if edit_section == "list" %}
+                <form class="mhav-inline-form" method="post" action="{% url 'website:courses_save' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="section" value="list">
+
+                    <div class="mhav-inline-field mhav-inline-title">
+                        {{ section_form.list_title.label_tag }}
+                        {{ section_form.list_title }}
+                        {{ section_form.list_title.errors }}
+                    </div>
+                    <div class="mhav-inline-actions">
+                        <button class="button button-primary" type="submit">Opslaan ✓</button>
+                        <a class="button button-outline" href="{% url 'website:courses' %}#list">Annuleren</a>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+
+        {% if can_manage_courses %}
+            <div class="mhav-course-manage-action">
+                <a class="button button-primary" href="{% url 'planning:overview' %}">⚙ Cursusadministratie ↗</a>
+            </div>
+        {% endif %}
+
+        <div class="editorial-course-list">
+            {% for page in pages %}
+                <div class="mhav-course-entry">
+                    <a class="editorial-course" href="{% url 'website:page' page.slug %}">
+                        <span class="editorial-course__number">{{ forloop.counter|stringformat:"02d" }}</span>
+                        <div>
+                            <h3>{{ page.title }}</h3>
+                            <p>{{ page.introduction|truncatewords:23 }}</p>
+                        </div>
+                        <span class="editorial-course__arrow">↗</span>
+                    </a>
+                    <!-- <a class="mhav-course-entry__apply" href="{% url 'website:application' %}?course={{ page.pk }}">
+                        Inschrijven voor {{ page.title }} →
+                    </a> -->
+                </div>
+            {% empty %}
+                <p>Het cursusaanbod wordt binnenkort gepubliceerd.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% if published_groups %}
+    <section class="editorial-section" id="lesgroepen">
+        <div class="container">
+            <span class="editorial-kicker">ACTUEEL CURSUSAANBOD</span>
+            <h2>Lesgroepen</h2>
+            <p>Lesgroepen uit gepubliceerde, actieve seizoenen.</p>
+
+            <div class="mhav-plan-grid">
+                {% for group in published_groups %}
+                    <article class="mhav-plan-card">
+                        <h3>
+                            <a href="{% url 'website:page' group.course.slug %}">{{ group.course.title }}</a>
+                        </h3>
+                        <p>{{ group.season.name }} · {{ group.name }}</p>
+                        <p>{{ group.get_day_display }} · {{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }}</p>
+                        <p>
+                            {% if group.trainer %}
+                                Instructeur: {{ group.trainer.get_full_name|default:group.trainer.email }}
+                            {% endif %}
+                        </p>
+                        <p>
+                            {% if group.placed_count >= group.capacity %}
+                                Vol
+                            {% else %}
+                                {{ group.capacity|add:0 }} plaatsen totaal · {{ group.placed_count }} bezet
+                            {% endif %}
+                        </p>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endif %}
+
+<section class="editorial-section" id="cta">
+    <div class="container editorial-feature">
+        <div>
+            <span class="editorial-kicker">MEEDOEN?</span>
+
+            {% if can_text and edit_section != "cta" %}
+                <div class="mhav-section-edit">
+                    <a class="mhav-pencil" href="?edit=cta#cta">✎ Bewerken</a>
+                </div>
+            {% endif %}
+
+            {% if edit_section == "cta" %}
+                <form class="mhav-inline-form" method="post" action="{% url 'website:courses_save' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="section" value="cta">
+
+                    <div class="mhav-inline-field mhav-inline-title">
+                        {{ section_form.cta_title.label_tag }}
+                        {{ section_form.cta_title }}
+                        {{ section_form.cta_title.errors }}
+                    </div>
+                    <div class="mhav-inline-field">
+                        {{ section_form.cta_text.label_tag }}
+                        {{ section_form.cta_text }}
+                        {{ section_form.cta_text.errors }}
+                    </div>
+                    <div class="mhav-inline-actions">
+                        <button class="button button-primary" type="submit">Opslaan ✓</button>
+                        <a class="button button-outline" href="{% url 'website:courses' %}#cta">Annuleren</a>
+                    </div>
+                </form>
+            {% else %}
+                <h2>{{ copy.cta_title }}</h2>
+                <p>{{ copy.cta_text }}</p>
+            {% endif %}
+        </div>
+
+        <a class="button button-primary" href="{% url 'website:application' %}">Inschrijven ↗</a>
+    </div>
+</section>
 {% endblock %}

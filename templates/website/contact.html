@@ -1,39 +1,84 @@
 {% extends "base.html" %}
-{% block title %}Contact | MHAV{% endblock %}
+{% block title %}
+    Contact | MHAV
+{% endblock %}
 {% block content %}
-<section class="mhav-section-hero"><div class="container mhav-section-layout">
-<div class="mhav-section-intro"><span class="eyebrow">WE HELPEN JE GRAAG</span><h1>Contact</h1>
-<p>Wil je meer weten over MHAV of onze trainingen? We horen graag van je.</p></div>
-<div class="mhav-section-photo">{% if photo.image %}<img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:'Contact met MHAV' }}">{% else %}
-<div class="mhav-photo-placeholder"><span aria-hidden="true">✦</span><strong>Tot op het trainingsveld!</strong><small>Foto binnenkort beschikbaar</small></div>{% endif %}</div>
-</div></section>
-<section class="section"><div class="container page-detail-grid">
-<article class="page-detail-body">
-<h2>Neem contact op</h2>
-{% if page %}<div class="article-body">{{ page.body|linebreaks }}</div>{% else %}
-<p>De contactinformatie wordt binnenkort gepubliceerd.</p>{% endif %}
-<div class="v6-form-panel" style="margin-top:32px">
-<h2>Stuur ons een bericht</h2>
-<p>Vul het formulier in. Je bericht wordt opgeslagen voor de beheerders van MHAV.</p>
-<form method="post" class="v6-contact-form">
-{% csrf_token %}
-{{ form.website }}
-{% if form.non_field_errors %}<div class="v6-form-errors">{{ form.non_field_errors }}</div>{% endif %}
-{% for field in form.visible_fields %}
-<div class="v6-form-field">
-<label for="{{ field.id_for_label }}">{{ field.label }} *</label>
+    <section class="mhav-section-hero">
+        <div class="container mhav-section-layout">
+            <div class="mhav-section-intro">
+                <span class="eyebrow">WE HELPEN JE GRAAG</span>
+                <h1>
+                    Contact
+                </h1>
+                <p>
+                    Wil je meer weten over MHAV of onze trainingen? We horen graag van je.
+                </p>
+            </div>
+            <div class="mhav-section-photo">
+                {% if photo.image %}
+                    <img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:'Contact met MHAV' }}">
+                {% else %}
+                    <div class="mhav-photo-placeholder">
+                        <span aria-hidden="true">✦</span><strong>Tot op het trainingsveld!</strong><small>Foto binnenkort beschikbaar</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container page-detail-grid">
+            <article class="page-detail-body">
+                <h2>
+                    Neem contact op
+                </h2>
+                {% if page %}
+                    <div class="article-body">
+                        {{ page.body|linebreaks }}
+                    </div>
+                {% else %}
+                    <p>
+                        De contactinformatie wordt binnenkort gepubliceerd.
+                    </p>
+                {% endif %}
+                <div class="v6-form-panel" style="margin-top:32px">
+                    <h2>
+                        Stuur ons een bericht
+                    </h2>
+                    <p>
+                        Vul het formulier in. Je bericht wordt opgeslagen voor de beheerders van MHAV.
+                    </p>
+                    <form method="post" class="v6-contact-form">
+                        {% csrf_token %}
+                        {{ form.website }}
+                        {% if form.non_field_errors %}
+                            <div class="v6-form-errors">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        {% for field in form.visible_fields %}
+                            <div class="v6-form-field">
+                                <label for="{{ field.id_for_label }}">{{ field.label }} *</label>
 {{ field }}
-{% for error in field.errors %}<small class="v6-form-errors">{{ error }}</small>{% endfor %}
-</div>
-{% endfor %}
-<button type="submit" class="button button-primary">Verstuur bericht →</button>
-<p class="v6-privacy-note">Je gegevens worden gebruikt om je vraag te beantwoorden. Bekijk onze <a href="{% url 'website:page' 'privacy' %}">privacyinformatie</a>.</p>
-</form>
-</div>
-</article>
-<aside class="page-detail-aside"><h2>Meer ontdekken</h2>
-<a href="{% url 'website:courses' %}">Onze cursussen →</a>
+                                {% for error in field.errors %}
+                                    <small class="v6-form-errors">{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="button button-primary">Verstuur bericht →</button>
+                        <p class="v6-privacy-note">
+                            Je gegevens worden gebruikt om je vraag te beantwoorden. Bekijk onze <a href="{% url 'website:page' 'privacy' %}">privacyinformatie</a>.
+                        </p>
+                    </form>
+                </div>
+            </article>
+            <aside class="page-detail-aside">
+                <h2>
+                    Meer ontdekken
+                </h2>
+                <a href="{% url 'website:courses' %}">Onze cursussen →</a>
 <a href="{% url 'website:phv' %}">PHV →</a>
-<a href="{% url 'website:general' %}">Over MHAV →</a></aside>
-</div></section>
+<a href="{% url 'website:general' %}">Over MHAV →</a>
+            </aside>
+        </div>
+    </section>
 {% endblock %}

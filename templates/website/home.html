@@ -1,11 +1,323 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Welkom | Mijn Hond Als Vriend{% endblock %}
+{% block title %}
+    Welkom | Mijn Hond Als Vriend
+{% endblock %}
 {% block content %}
-<section class="hero"><div class="container hero-grid"><div class="hero-copy" id="hero">{% if can_text or can_photos %}<div class="mhav-section-edit">{% if edit_section != 'hero' %}<a class="mhav-pencil" href="?edit=hero#hero" aria-label="Welkomstgedeelte bewerken">✎ <span>Bewerken</span></a>{% endif %}</div>{% endif %}{% if edit_section == 'hero' %}<form class="mhav-inline-form" action="{% url 'website:home_edit' %}" method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="section" value="hero"><span class="eyebrow">WELKOM BIJ MIJN HOND ALS VRIEND</span>{% if section_form %}<div class="mhav-inline-field mhav-inline-title">{{ section_form.hero_title.label_tag }}{{ section_form.hero_title }}{{ section_form.hero_title.errors }}</div><div class="mhav-inline-field">{{ section_form.hero_intro.label_tag }}{{ section_form.hero_intro }}{{ section_form.hero_intro.errors }}</div>{% else %}<h1>{{ home_content.hero_title }}</h1><p>{{ home_content.hero_intro }}</p>{% endif %}{% if section_photo_form %}<div class="mhav-inline-photo"><strong>Hoofdfoto wijzigen</strong><small>Laat leeg om de huidige foto te behouden.</small>{{ section_photo_form.hero_image }}{{ section_photo_form.hero_image.errors }}{{ section_photo_form.hero_alt.label_tag }}{{ section_photo_form.hero_alt }}{{ section_photo_form.hero_alt.errors }}</div>{% endif %}<div class="mhav-inline-actions"><button type="submit" class="button button-primary">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:home' %}#hero">Annuleren</a></div></form>{% else %}<span class="eyebrow"><span class="eyebrow-dot"></span> WELKOM BIJ MIJN HOND ALS VRIEND</span><h1>{{ home_content.hero_title }}</h1><p>{{ home_content.hero_intro }}</p>{% endif %}<div class="hero-actions"><a class="button button-primary" href="{% url 'website:courses' %}">Ontdek onze trainingen <span aria-hidden="true">↗</span></a><a class="text-link" href="#over-ons">Leer ons kennen <span aria-hidden="true">→</span></a></div><div class="hero-note"><span class="note-icon">♥</span><span>Met liefde voor honden en hun mensen</span></div></div><div class="hero-visual"><img src="{% if hero_photo.image %}{{ hero_photo.image.url }}{% else %}{% static 'images/hero-dog.jpg' %}{% endif %}" alt="Hond geniet buiten in het groen" onerror="this.style.display='none';this.parentElement.classList.add('image-missing')"><div class="image-fallback">Samen op avontuur <span>🐾</span></div><div class="hero-sticker">Samen leren<br><strong>Samen genieten!</strong></div></div></div></section>
-<section class="features"><div class="container feature-grid"><div class="feature"><span class="feature-icon">♡</span><div><strong>Persoonlijke aandacht</strong><p>Ruimte voor iedere hond en eigenaar.</p></div></div><div class="feature"><span class="feature-icon">✧</span><div><strong>Leren met plezier</strong><p>Een positieve sfeer op het trainingsveld.</p></div></div><div class="feature"><span class="feature-icon">♧</span><div><strong>Een hechte vereniging</strong><p>Samen ontdekken, oefenen en groeien.</p></div></div></div></section>
-<section id="over-ons" class="section about-section"><div class="container about-grid"><div class="about-visual"><img src="{% if about_photo.image %}{{ about_photo.image.url }}{% else %}{% static 'images/about-dog.jpg' %}{% endif %}" alt="Hond tijdens een ontspannen trainingsmoment" onerror="this.style.display='none';this.parentElement.classList.add('image-missing')"><div class="image-fallback">Een plek voor iedereen <span>🐕</span></div></div><div class="about-copy">{% if can_text or can_photos %}<div class="mhav-section-edit">{% if edit_section != 'about' %}<a class="mhav-pencil" href="?edit=about#over-ons" aria-label="Over ons bewerken">✎ <span>Bewerken</span></a>{% endif %}</div>{% endif %}<span class="eyebrow">OVER ONZE VERENIGING</span>{% if edit_section == 'about' %}<form class="mhav-inline-form" action="{% url 'website:home_edit' %}" method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="section" value="about">{% if section_form %}<div class="mhav-inline-field mhav-inline-title">{{ section_form.about_title.label_tag }}{{ section_form.about_title }}{{ section_form.about_title.errors }}</div><div class="mhav-inline-field">{{ section_form.about_paragraph_1.label_tag }}{{ section_form.about_paragraph_1 }}{{ section_form.about_paragraph_1.errors }}</div><div class="mhav-inline-field">{{ section_form.about_paragraph_2.label_tag }}{{ section_form.about_paragraph_2 }}{{ section_form.about_paragraph_2.errors }}</div>{% else %}<h2>{{ home_content.about_title }}</h2><p>{{ home_content.about_paragraph_1 }}</p><p>{{ home_content.about_paragraph_2 }}</p>{% endif %}{% if section_photo_form %}<div class="mhav-inline-photo"><strong>Foto wijzigen</strong><small>Laat leeg om de huidige foto te behouden.</small>{{ section_photo_form.about_image }}{{ section_photo_form.about_image.errors }}{{ section_photo_form.about_alt.label_tag }}{{ section_photo_form.about_alt }}{{ section_photo_form.about_alt.errors }}</div>{% endif %}<div class="mhav-inline-actions"><button type="submit" class="button button-primary">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:home' %}#over-ons">Annuleren</a></div></form>{% else %}<h2>{{ home_content.about_title }}</h2><p>{{ home_content.about_paragraph_1 }}</p><p>{{ home_content.about_paragraph_2 }}</p>{% endif %}<a class="button button-outline" href="{% url 'website:contact' %}">Maak kennis met MHAV <span aria-hidden="true">→</span></a></div></div></section>
-<section id="training" class="section training-section"><div class="container"><div class="section-heading"><div><span class="eyebrow">SAMEN AAN DE SLAG</span><h2>Voor elke stap <em>een training.</em></h2></div><p>Van de eerste stappen samen tot het verder ontwikkelen van jullie vaardigheden.</p></div><div class="card-grid"><article class="training-card"><div class="card-art art-puppy">🐶</div><div class="card-body"><span class="card-kicker">EEN GOEDE START</span><h3>Puppy & basis</h3><p>Werk samen aan vertrouwen, contact en een fijne basis.</p><a href="{% url 'website:page' 'puppycursus' %}">Vraag naar mogelijkheden <span aria-hidden="true">→</span></a></div></article><article class="training-card"><div class="card-art art-obedience">🐕</div><div class="card-body"><span class="card-kicker">SAMEN VERDER</span><h3>Gehoorzaamheid</h3><p>Oefen samen en versterk de samenwerking met je hond.</p><a href="{% url 'website:courses' %}">Vraag naar mogelijkheden <span aria-hidden="true">→</span></a></div></article><article class="training-card"><div class="card-art art-fun">🐾</div><div class="card-body"><span class="card-kicker">PLEZIER VOOROP</span><h3>Clubactiviteiten</h3><p>Ontmoet andere hondenliefhebbers en beleef mooie momenten.</p><a href="#nieuws">Bekijk het laatste nieuws <span aria-hidden="true">→</span></a></div></article></div><p class="section-footnote">Het actuele trainingsaanbod en de beschikbaarheid worden later via het clubbeheer bijgewerkt.</p></div></section>
-<section id="nieuws" class="section news-section"><div class="container"><div class="section-heading"><div><span class="eyebrow">UIT DE VERENIGING</span><h2>Het laatste <em>nieuws.</em></h2></div><a class="text-link" href="{% url 'content:list' %}">Alle nieuwsberichten →</a></div><div class="news-grid">{% for item in news_posts %}<article class="news-card">{% if item.image %}<a href="{% url 'content:detail' item.slug %}"><img class="news-card-image" src="{{ item.image.url }}" alt="" loading="lazy"></a>{% endif %}<span class="news-date">{{ item.published_at|date:'j F Y' }}</span><h3><a href="{% url 'content:detail' item.slug %}">{{ item.title }}</a></h3><p>{{ item.summary }}</p><a class="text-link" href="{% url 'content:detail' item.slug %}">Lees verder →</a></article>{% empty %}<article class="news-empty"><span class="feature-icon">✉</span><h3>Binnenkort meer nieuws</h3><p>Hier delen we het laatste nieuws van onze vereniging.</p></article>{% endfor %}</div>{% if announcements %}<div class="notice-strip"><h3>Mededelingen</h3>{% for item in announcements %}<p><strong>{{ item.title }}</strong> — {{ item.body|truncatewords:28 }}</p>{% endfor %}</div>{% endif %}</div></section>
-<section id="contact" class="contact-section"><div class="container contact-inner"><div><span class="eyebrow eyebrow-light">WE LEREN JE GRAAG KENNEN</span>{% if can_text %}<div class="mhav-section-edit">{% if edit_section != 'contact' %}<a class="mhav-pencil" href="?edit=contact#contact" aria-label="Contactblok bewerken">✎ <span>Bewerken</span></a>{% endif %}</div>{% endif %}{% if edit_section == 'contact' %}<form class="mhav-inline-form" action="{% url 'website:home_edit' %}" method="post">{% csrf_token %}<input type="hidden" name="section" value="contact"><div class="mhav-inline-field mhav-inline-title">{{ section_form.contact_title.label_tag }}{{ section_form.contact_title }}{{ section_form.contact_title.errors }}</div><div class="mhav-inline-field">{{ section_form.contact_intro.label_tag }}{{ section_form.contact_intro }}{{ section_form.contact_intro.errors }}</div><div class="mhav-inline-actions"><button class="button button-light" type="submit">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:home' %}#contact">Annuleren</a></div></form>{% else %}<h2>{{ home_content.contact_title }}</h2><p>{{ home_content.contact_intro }}</p>{% endif %}</div><a class="button button-light" href="{% url 'website:contact' %}">Neem contact op <span aria-hidden="true">↗</span></a></div></section>
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-copy" id="hero">
+                {% if can_text or can_photos %}
+                    <div class="mhav-section-edit">
+                        {% if edit_section != 'hero' %}
+                            <a class="mhav-pencil" href="?edit=hero#hero" aria-label="Welkomstgedeelte bewerken">✎ <span>Bewerken</span></a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if edit_section == 'hero' %}
+                    <form class="mhav-inline-form" action="{% url 'website:home_edit' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="section" value="hero"><span class="eyebrow">WELKOM BIJ MIJN HOND ALS VRIEND</span>
+                        {% if section_form %}
+                            <div class="mhav-inline-field mhav-inline-title">
+                                {{ section_form.hero_title.label_tag }}{{ section_form.hero_title }}{{ section_form.hero_title.errors }}
+                            </div>
+                            <div class="mhav-inline-field">
+                                {{ section_form.hero_intro.label_tag }}{{ section_form.hero_intro }}{{ section_form.hero_intro.errors }}
+                            </div>
+                        {% else %}
+                            <h1>
+                                {{ home_content.hero_title }}
+                            </h1>
+                            <p>
+                                {{ home_content.hero_intro }}
+                            </p>
+                        {% endif %}
+                        {% if section_photo_form %}
+                            <div class="mhav-inline-photo">
+                                <strong>Hoofdfoto wijzigen</strong><small>Laat leeg om de huidige foto te behouden.</small>{{ section_photo_form.hero_image }}{{ section_photo_form.hero_image.errors }}{{ section_photo_form.hero_alt.label_tag }}{{ section_photo_form.hero_alt }}{{ section_photo_form.hero_alt.errors }}
+                            </div>
+                        {% endif %}
+                        <div class="mhav-inline-actions">
+                            <button type="submit" class="button button-primary">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:home' %}#hero">Annuleren</a>
+                        </div>
+                    </form>
+                {% else %}
+                    <span class="eyebrow"><span class="eyebrow-dot"></span> WELKOM BIJ MIJN HOND ALS VRIEND</span>
+                    <h1>
+                        {{ home_content.hero_title }}
+                    </h1>
+                    <p>
+                        {{ home_content.hero_intro }}
+                    </p>
+                {% endif %}
+                <div class="hero-actions">
+                    <a class="button button-primary" href="{% url 'website:courses' %}">Ontdek onze trainingen <span aria-hidden="true">↗</span></a><a class="text-link" href="#over-ons">Leer ons kennen <span aria-hidden="true">→</span></a>
+                </div>
+                <div class="hero-note">
+                    <span class="note-icon">♥</span><span>Met liefde voor honden en hun mensen</span>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <img src="{% if hero_photo.image %}{{ hero_photo.image.url }}{% else %}{% static 'images/hero-dog.jpg' %}{% endif %}" alt="Hond geniet buiten in het groen" onerror="this.style.display='none';this.parentElement.classList.add('image-missing')">
+                <div class="image-fallback">
+                    Samen op avontuur <span>🐾</span>
+                </div>
+                <div class="hero-sticker">
+                    Samen leren<br><strong>Samen genieten!</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="features">
+        <div class="container feature-grid">
+            <div class="feature">
+                <span class="feature-icon">♡</span>
+                <div>
+                    <strong>Persoonlijke aandacht</strong>
+                    <p>
+                        Ruimte voor iedere hond en eigenaar.
+                    </p>
+                </div>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">✧</span>
+                <div>
+                    <strong>Leren met plezier</strong>
+                    <p>
+                        Een positieve sfeer op het trainingsveld.
+                    </p>
+                </div>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">♧</span>
+                <div>
+                    <strong>Een hechte vereniging</strong>
+                    <p>
+                        Samen ontdekken, oefenen en groeien.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="over-ons" class="section about-section">
+        <div class="container about-grid">
+            <div class="about-visual">
+                <img src="{% if about_photo.image %}{{ about_photo.image.url }}{% else %}{% static 'images/about-dog.jpg' %}{% endif %}" alt="Hond tijdens een ontspannen trainingsmoment" onerror="this.style.display='none';this.parentElement.classList.add('image-missing')">
+                <div class="image-fallback">
+                    Een plek voor iedereen <span>🐕</span>
+                </div>
+            </div>
+            <div class="about-copy">
+                {% if can_text or can_photos %}
+                    <div class="mhav-section-edit">
+                        {% if edit_section != 'about' %}
+                            <a class="mhav-pencil" href="?edit=about#over-ons" aria-label="Over ons bewerken">✎ <span>Bewerken</span></a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                <span class="eyebrow">OVER ONZE VERENIGING</span>
+                {% if edit_section == 'about' %}
+                    <form class="mhav-inline-form" action="{% url 'website:home_edit' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="section" value="about">
+                        {% if section_form %}
+                            <div class="mhav-inline-field mhav-inline-title">
+                                {{ section_form.about_title.label_tag }}{{ section_form.about_title }}{{ section_form.about_title.errors }}
+                            </div>
+                            <div class="mhav-inline-field">
+                                {{ section_form.about_paragraph_1.label_tag }}{{ section_form.about_paragraph_1 }}{{ section_form.about_paragraph_1.errors }}
+                            </div>
+                            <div class="mhav-inline-field">
+                                {{ section_form.about_paragraph_2.label_tag }}{{ section_form.about_paragraph_2 }}{{ section_form.about_paragraph_2.errors }}
+                            </div>
+                        {% else %}
+                            <h2>
+                                {{ home_content.about_title }}
+                            </h2>
+                            <p>
+                                {{ home_content.about_paragraph_1 }}
+                            </p>
+                            <p>
+                                {{ home_content.about_paragraph_2 }}
+                            </p>
+                        {% endif %}
+                        {% if section_photo_form %}
+                            <div class="mhav-inline-photo">
+                                <strong>Foto wijzigen</strong><small>Laat leeg om de huidige foto te behouden.</small>{{ section_photo_form.about_image }}{{ section_photo_form.about_image.errors }}{{ section_photo_form.about_alt.label_tag }}{{ section_photo_form.about_alt }}{{ section_photo_form.about_alt.errors }}
+                            </div>
+                        {% endif %}
+                        <div class="mhav-inline-actions">
+                            <button type="submit" class="button button-primary">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:home' %}#over-ons">Annuleren</a>
+                        </div>
+                    </form>
+                {% else %}
+                    <h2>
+                        {{ home_content.about_title }}
+                    </h2>
+                    <p>
+                        {{ home_content.about_paragraph_1 }}
+                    </p>
+                    <p>
+                        {{ home_content.about_paragraph_2 }}
+                    </p>
+                {% endif %}
+                <a class="button button-outline" href="{% url 'website:contact' %}">Maak kennis met MHAV <span aria-hidden="true">→</span></a>
+            </div>
+        </div>
+    </section>
+    <section id="training" class="section training-section">
+        <div class="container">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">SAMEN AAN DE SLAG</span>
+                    <h2>
+                        Voor elke stap <em>een training.</em>
+                    </h2>
+                </div>
+                <p>
+                    Van de eerste stappen samen tot het verder ontwikkelen van jullie vaardigheden.
+                </p>
+            </div>
+            <div class="card-grid">
+                <article class="training-card">
+                    <div class="card-art art-puppy">
+                        🐶
+                    </div>
+                    <div class="card-body">
+                        <span class="card-kicker">EEN GOEDE START</span>
+                        <h3>
+                            Puppy & basis
+                        </h3>
+                        <p>
+                            Werk samen aan vertrouwen, contact en een fijne basis.
+                        </p>
+                        <a href="{% url 'website:page' 'puppycursus' %}">Vraag naar mogelijkheden <span aria-hidden="true">→</span></a>
+                    </div>
+                </article>
+                <article class="training-card">
+                    <div class="card-art art-obedience">
+                        🐕
+                    </div>
+                    <div class="card-body">
+                        <span class="card-kicker">SAMEN VERDER</span>
+                        <h3>
+                            Gehoorzaamheid
+                        </h3>
+                        <p>
+                            Oefen samen en versterk de samenwerking met je hond.
+                        </p>
+                        <a href="{% url 'website:courses' %}">Vraag naar mogelijkheden <span aria-hidden="true">→</span></a>
+                    </div>
+                </article>
+                <article class="training-card">
+                    <div class="card-art art-fun">
+                        🐾
+                    </div>
+                    <div class="card-body">
+                        <span class="card-kicker">PLEZIER VOOROP</span>
+                        <h3>
+                            Clubactiviteiten
+                        </h3>
+                        <p>
+                            Ontmoet andere hondenliefhebbers en beleef mooie momenten.
+                        </p>
+                        <a href="#nieuws">Bekijk het laatste nieuws <span aria-hidden="true">→</span></a>
+                    </div>
+                </article>
+            </div>
+            <p class="section-footnote">
+                Het actuele trainingsaanbod en de beschikbaarheid worden later via het clubbeheer bijgewerkt.
+            </p>
+        </div>
+    </section>
+    <section id="nieuws" class="section news-section">
+        <div class="container">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">UIT DE VERENIGING</span>
+                    <h2>
+                        Het laatste <em>nieuws.</em>
+                    </h2>
+                </div>
+                <a class="text-link" href="{% url 'content:list' %}">Alle nieuwsberichten →</a>
+            </div>
+            <div class="news-grid">
+                {% for item in news_posts %}
+                    <article class="news-card">
+                        {% if item.image %}
+                            <a href="{% url 'content:detail' item.slug %}"><img class="news-card-image" src="{{ item.image.url }}" alt="" loading="lazy"></a>
+                        {% endif %}
+                        <span class="news-date">{{ item.published_at|date:'j F Y' }}</span>
+                        <h3>
+                            <a href="{% url 'content:detail' item.slug %}">{{ item.title }}</a>
+                        </h3>
+                        <p>
+                            {{ item.summary }}
+                        </p>
+                        <a class="text-link" href="{% url 'content:detail' item.slug %}">Lees verder →</a>
+                    </article>
+                {% empty %}
+                    <article class="news-empty">
+                        <span class="feature-icon">✉</span>
+                        <h3>
+                            Binnenkort meer nieuws
+                        </h3>
+                        <p>
+                            Hier delen we het laatste nieuws van onze vereniging.
+                        </p>
+                    </article>
+                {% endfor %}
+            </div>
+            {% if announcements %}
+                <div class="notice-strip">
+                    <h3>
+                        Mededelingen
+                    </h3>
+                    {% for item in announcements %}
+                        <p>
+                            <strong>{{ item.title }}</strong> — {{ item.body|truncatewords:28 }}
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
+    <section id="contact" class="contact-section">
+        <div class="container contact-inner">
+            <div>
+                <span class="eyebrow eyebrow-light">WE LEREN JE GRAAG KENNEN</span>
+                {% if can_text %}
+                    <div class="mhav-section-edit">
+                        {% if edit_section != 'contact' %}
+                            <a class="mhav-pencil" href="?edit=contact#contact" aria-label="Contactblok bewerken">✎ <span>Bewerken</span></a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if edit_section == 'contact' %}
+                    <form class="mhav-inline-form" action="{% url 'website:home_edit' %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="section" value="contact">
+                        <div class="mhav-inline-field mhav-inline-title">
+                            {{ section_form.contact_title.label_tag }}{{ section_form.contact_title }}{{ section_form.contact_title.errors }}
+                        </div>
+                        <div class="mhav-inline-field">
+                            {{ section_form.contact_intro.label_tag }}{{ section_form.contact_intro }}{{ section_form.contact_intro.errors }}
+                        </div>
+                        <div class="mhav-inline-actions">
+                            <button class="button button-light" type="submit">Opslaan ✓</button><a class="button button-outline" href="{% url 'website:home' %}#contact">Annuleren</a>
+                        </div>
+                    </form>
+                {% else %}
+                    <h2>
+                        {{ home_content.contact_title }}
+                    </h2>
+                    <p>
+                        {{ home_content.contact_intro }}
+                    </p>
+                {% endif %}
+            </div>
+            <a class="button button-light" href="{% url 'website:contact' %}">Neem contact op <span aria-hidden="true">↗</span></a>
+        </div>
+    </section>
 {% endblock %}

@@ -47,11 +47,14 @@ def _section_page(request, page_key, edit_section=None, form=None):
     if page_key == 'courses':
         from apps.planning.models import TrainingGroup, Season
         from django.db.models import Count
+        from apps.planning.models import SeasonCourseOffering
+        open_pairs = {(o.season_id, o.course_id) for o in SeasonCourseOffering.objects.select_related('season', 'course') if o.accepts_applications()}
         published_groups = (TrainingGroup.objects.filter(
-            season__status=Season.Status.ACTIVE, course__is_published=True,
+            season_id__in=[s for s, c in open_pairs], course_id__in=[c for s, c in open_pairs], course__is_published=True,
         ).select_related('course', 'season', 'trainer')
          .annotate(placed_count=Count('enrollments', filter=Q(enrollments__status='placed')))
          .order_by('season__starts_on', 'day', 'starts_at', 'name'))
+        published_groups = [g for g in published_groups if (g.season_id, g.course_id) in open_pairs]
     return render(request, "website/" + ("phv" if page_key == "phv" else "courses") + ".html", {
         "section": page_key, "copy": copy, "photo": photo, "published_groups": published_groups,
         "feature": SitePage.objects.filter(is_published=True, slug="phv-knpv").first() if page_key == "phv" else None,
@@ -268,20 +271,26 @@ def home(request):
 
 
 def page(request, slug):
+    # Preserve the old informational URL but make registration the primary route.
+    if slug == 'inschrijven':
+        return redirect('website:application')
     item = get_object_or_404(SitePage, slug=slug, is_published=True)
     related = SitePage.objects.filter(
         is_published=True, slug__in=TRAINING_SLUGS
     ).exclude(pk=item.pk)[:3] if slug in TRAINING_SLUGS else []
-    from apps.planning.models import TrainingGroup, Season
+    from apps.planning.models import TrainingGroup, Season, SeasonCourseOffering
     from django.db.models import Count
-    published_groups = (TrainingGroup.objects.filter(
-        course=item, season__status=Season.Status.ACTIVE,
-    ).select_related('season', 'trainer')
-     .annotate(placed_count=Count('enrollments', filter=Q(enrollments__status='placed')))
+    offerings = [o for o in SeasonCourseOffering.objects.filter(course=item).select_related('season') if o.approval_valid() and o.season.status != Season.Status.CLOSED]
+    open_offerings = [o for o in offerings if o.accepts_applications()]
+    open_season_ids = [o.season_id for o in open_offerings]
+    published_groups = (TrainingGroup.objects.filter(course=item, season_id__in=open_season_ids)
+     .select_related('season').annotate(placed_count=Count('enrollments', filter=Q(enrollments__status='placed')))
      .order_by('season__starts_on', 'day', 'starts_at'))
+    upcoming_offering = next((o for o in sorted(offerings, key=lambda x: x.season.starts_on) if o.season.ends_on >= __import__('datetime').date.today()), None)
+    upcoming_open = upcoming_offering.accepts_applications() if upcoming_offering else False
     return render(
         request, "website/page.html",
-        {"page": item, "related_pages": related, "published_groups": published_groups},
+        {"page": item, "related_pages": related, "published_groups": published_groups, "upcoming_offering": upcoming_offering, "upcoming_open": upcoming_open, "is_course_page": item.slug in TRAINING_SLUGS or item.slug.startswith("cursus-")},
     )
 
 

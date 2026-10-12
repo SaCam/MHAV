@@ -6,18 +6,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f6ef">
   <meta name="description" content="Mijn Hond Als Vriend: samen leren, trainen en genieten met je hond.">
-  <title>{% block title %}Mijn Hond Als Vriend{% endblock %}</title>
+  <title>
+{% block title %}
+    Mijn Hond Als Vriend
+{% endblock %}
+</title>
   <link rel="stylesheet" href="{% static 'css/site.css' %}">
   <link rel="stylesheet" href="{% static 'css/news.css' %}">
   <link rel="stylesheet" href="{% static 'css/components.css' %}">
   <link rel="stylesheet" href="{% static 'css/pages.css' %}">
-  {% block extra_css %}{% endblock %}
-  <script src="{% static 'js/site.js' %}" defer></script>
+{% block extra_css %}
+{% endblock %}
+<script src="{% static 'js/site.js' %}" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Ga naar inhoud</a>
   {% include "partials/header.html" %}
-  <main id="main">{% block content %}{% endblock %}</main>
-  {% include "partials/footer.html" %}
+<main id="main">
+    {% block content %}
+    {% endblock %}
+</main>
+{% include "partials/footer.html" %}
 </body>
 </html>

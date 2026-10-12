@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Mijn beschikbaarheid | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-season-ux.css' %}">{% endblock %}
+{% block content %}
+<section class="page-intro">
+    <div class="container">
+        <a href="{% url 'accounts:dashboard' %}">← Mijn MHAV</a>
+        <h1>Mijn beschikbaarheid</h1>
+        <p>Alleen conceptseizoenen staan hier. Zodra een seizoen actief of afgesloten is, kun je je beschikbaarheid niet meer wijzigen.</p>
+    </div>
+</section>
+<section class="section">
+    <div class="container mhav-flow-wrap">
+        <div class="mhav-flow-grid">
+            {% for season, response in seasons_with_responses %}
+                <a class="mhav-flow-card" href="{% url 'planning:trainer_availability' season.pk %}">
+                    <span class="mhav-flow-tag {% if not response %}mhav-flow-tag--pending{% elif response.response == 'none' %}mhav-flow-tag--no{% elif response.response == 'partial' %}mhav-flow-tag--maybe{% endif %}">
+                        {% if response %}{{ response.get_response_display }}{% else %}Actie nodig · Nog niet ingevuld{% endif %}
+                    </span>
+                    <h3>{{ season.name }}</h3>
+                    <p>{{ season.starts_on|date:'d-m-Y' }} t/m {{ season.ends_on|date:'d-m-Y' }}</p>
+                    <p>{{ season.lesson_count }} lessen · {{ season.get_lesson_day_display }}</p>
+                    <strong>{% if response %}Beschikbaarheid wijzigen →{% else %}Beschikbaarheid doorgeven →{% endif %}</strong>
+                </a>
+            {% empty %}
+                <div class="mhav-flow-panel">
+                    <h2>Geen openstaande seizoenen</h2>
+                    <p>Zodra een nieuw seizoen wordt aangekondigd, verschijnt het hier.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,3 +1,92 @@
 {% extends "base.html" %}
-{% block title %}Mijn MHAV{% endblock %}
-{% block content %}<section class="page-intro"><div class="container"><h1>Welkom, {{ user.first_name|default:user.username }}</h1><p>Jouw persoonlijke MHAV omgeving.</p></div></section><section class="section"><div class="container"><div class="content-form"><h2>Mijn account</h2><p>Welkom bij Mijn Hond Als Vriend! Je account is aangemaakt en je kunt inloggen op de website.</p><p><strong>Lidmaatschap:</strong> {% if is_member %}Lid{% else %}Geen lid{% endif %}</p>{% if not is_member %}<p>Ben je lid van onze vereniging? Het bestuur kan je lidmaatschap aan je account koppelen.</p>{% endif %}<p><strong>E-mailadres:</strong> {{ user.email }}</p>{% if not profile_complete %}<p><strong>Profiel aanvullen:</strong> Voeg je contact- en adresgegevens toe wanneer het jou uitkomt.</p>{% endif %}<p><a class="text-link" href="{% url 'accounts:profile' %}">Profiel bewerken →</a></p>{% if is_trainer %}<p><a class="text-link" href="{% url 'accounts:trainer_profile' %}">Mijn trainersprofiel bewerken →</a></p>{% endif %}<p><a class="text-link" href="{% url 'accounts:password_change' %}">Wachtwoord wijzigen →</a></p>{% if is_member %}<p><a class="text-link" href="{% url 'content:submit' %}">Nieuwsbericht insturen →</a></p>{% endif %}<form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="button button-outline" type="submit">Uitloggen</button></form></div></div></section>{% endblock %}
+{% block title %}
+    Mijn MHAV
+{% endblock %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-season-ux.css' %}">{% endblock %}
+{% block content %}
+    <section class="page-intro">
+        <div class="container">
+            <h1>
+                Welkom, {{ user.first_name|default:user.username }}
+            </h1>
+            <p>
+                Jouw persoonlijke MHAV omgeving.
+            </p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <div class="content-form">
+                <h2>
+                    Mijn account
+                </h2>
+                <p>
+                    Welkom bij Mijn Hond Als Vriend! Je account is aangemaakt en je kunt inloggen op de website.
+                </p>
+                <p>
+                    <strong>Lidmaatschap:</strong>
+                    {% if is_member %}
+                        Lid
+                    {% else %}
+                        Geen lid
+                    {% endif %}
+                </p>
+                {% if not is_member %}
+                    <p>
+                        Ben je lid van onze vereniging? Het bestuur kan je lidmaatschap aan je account koppelen.
+                    </p>
+                {% endif %}
+                <p>
+                    <strong>E-mailadres:</strong> {{ user.email }}
+                </p>
+                {% if not profile_complete %}
+                    <p>
+                        <strong>Profiel aanvullen:</strong> Voeg je contact- en adresgegevens toe wanneer het jou uitkomt.
+                    </p>
+                {% endif %}
+                <p>
+                    <a class="text-link" href="{% url 'accounts:profile' %}">Profiel bewerken →</a>
+                </p>
+                {% if is_trainer %}
+                    <div class="mhav-flow-panel" style="margin-top: 1.5rem;">
+                        <h2>Mijn komende lesseizoenen</h2>
+                        <p>Geef je beschikbaarheid door zolang het seizoen in concept staat. Zodra het actief wordt, wordt je reactie vergrendeld.</p>
+                        <div class="mhav-flow-grid">
+                            {% for season, response in trainer_seasons %}
+                                <a class="mhav-flow-card" href="{% url 'planning:trainer_availability' season.pk %}">
+                                    <span class="mhav-flow-tag {% if not response %}mhav-flow-tag--pending{% elif response.response == 'none' %}mhav-flow-tag--no{% elif response.response == 'partial' %}mhav-flow-tag--maybe{% endif %}">
+                                        {% if response %}{{ response.get_response_display }}{% else %}Actie nodig{% endif %}
+                                    </span>
+                                    <h3>{{ season.name }}</h3>
+                                    <p>{{ season.starts_on|date:'d-m-Y' }} t/m {{ season.ends_on|date:'d-m-Y' }}</p>
+                                    <strong>{% if response %}Wijzigen →{% else %}Beschikbaarheid invullen →{% endif %}</strong>
+                                </a>
+                            {% empty %}
+                                <p>Er zijn momenteel geen openstaande seizoenen.</p>
+                            {% endfor %}
+                        </div>
+                        <p><a class="text-link" href="{% url 'planning:trainer_seasons' %}">Openstaande seizoenen bekijken →</a></p>
+                    </div>
+                {% endif %}
+                {% if is_trainer %}
+                    <p>
+                        <a class="text-link" href="{% url 'accounts:trainer_profile' %}">Mijn trainersprofiel bewerken →</a>
+                    </p>
+                {% endif %}
+                <p>
+                    <a class="text-link" href="{% url 'accounts:password_change' %}">Wachtwoord wijzigen →</a>
+                </p>
+                {% if is_member %}
+                    <p>
+                        <a class="text-link" href="{% url 'content:submit' %}">Nieuwsbericht insturen →</a>
+                    </p>
+                {% endif %}
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="button button-outline" type="submit">Uitloggen</button>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}

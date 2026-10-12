@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{% if group %}Lesgroep bewerken{% else %}Nieuwe lesgroep{% endif %} | MHAV{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mhav-beheer.css' %}">
+<link rel="stylesheet" href="{% static 'css/mhav-season-ux.css' %}">
+<style>
+.mhav-group-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,.9fr);gap:1.5rem;align-items:start}
+.mhav-group-panel{padding:1.5rem;background:var(--color-surface,#fff);border:1px solid #dbe3dc;border-radius:14px}
+.mhav-group-form p{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1rem}
+.mhav-group-form input:not([type=checkbox]),.mhav-group-form select,.mhav-group-form textarea{width:100%;padding:.7rem;border:1px solid #bdcfc2;border-radius:8px}
+.mhav-group-form ul{list-style:none;padding:0;margin:.5rem 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.5rem}
+.mhav-group-form li label{display:flex;gap:.6rem;align-items:center;padding:.6rem;border:1px solid #dbe3dc;border-radius:8px;cursor:pointer}
+.mhav-group-form input[type=checkbox]{width:1.2rem;height:1.2rem}
+.mhav-coverage-list{display:grid;gap:.5rem;margin-top:1rem}
+.mhav-coverage-day{display:flex;justify-content:space-between;gap:.5rem;padding:.65rem .8rem;border-radius:8px;background:#eceeed}
+.mhav-coverage-day[data-state=yes]{background:#e0f3e6;color:#17623a}
+.mhav-coverage-day[data-state=no]{background:#fae1e1;color:#992d2d}
+.mhav-coverage-day[data-state=maybe]{background:#fff2c7;color:#805e08}
+.mhav-coverage-day[data-state=unset]{background:#eceeed;color:#505d55}
+.mhav-coverage-summary{font-weight:700;margin:.8rem 0}
+@media(max-width:800px){.mhav-group-layout{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<section class="page-intro"><div class="container">
+<a href="{% url 'planning:season_detail' season.pk %}">← {{ season.name }}</a>
+<h1>{% if group %}Lesgroep bewerken{% else %}Nieuwe lesgroep{% endif %}</h1>
+<p>{{ season.name }} · Zaterdag · {{ season.lesson_count }} mogelijke lesdagen</p>
+</div></section>
+<section class="section"><div class="container mhav-group-layout">
+<div class="mhav-group-panel">
+<h2>Groepsgegevens</h2>
+<form method="post" class="mhav-group-form" id="group-form">
+{% csrf_token %}
+{% if form.non_field_errors %}<div role="alert">{{ form.non_field_errors }}</div>{% endif %}
+{% for field in form %}
+<p><label for="{{ field.id_for_label }}"><strong>{{ field.label }}</strong></label>
+{{ field }}
+{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+{% if field.errors %}<span role="alert">{{ field.errors }}</span>{% endif %}
+</p>
+{% endfor %}
+<button class="button button-primary" type="submit">Lesgroep opslaan</button>
+</form>
+</div>
+<aside class="mhav-group-panel">
+<h2>Instructeur en lesdagen</h2>
+<p>Bekijk direct of de gekozen instructeur op alle geselecteerde zaterdagen kan lesgeven.</p>
+<div id="coverage-summary" class="mhav-coverage-summary" aria-live="polite"></div>
+<div id="coverage-list" class="mhav-coverage-list"></div>
+<p><small>✓ Bevestigd beschikbaar · ✕ Niet beschikbaar · ? Onzeker · ○ Nog niet bevestigd. Alleen groen telt als bevestigd.</small></p>
+</aside>
+</div></section>
+{{ trainer_states|json_script:"mhav-trainer-states" }}
+<script>
+(function () {
+    'use strict';
+    const states = JSON.parse(document.getElementById('mhav-trainer-states').textContent);
+    const trainer = document.getElementById('id_trainer');
+    const checks = Array.from(document.querySelectorAll('input[name="lesson_dates_selected"]'));
+    const list = document.getElementById('coverage-list');
+    const summary = document.getElementById('coverage-summary');
+    const labels = {yes: '✓ Beschikbaar', no: '✕ Niet beschikbaar', maybe: '? Onzeker', unset: '○ Niet bevestigd'};
+    function update() {
+        const selected = checks.filter(box => box.checked);
+        const availability = states[trainer.value] || {};
+        let confirmed = 0;
+        list.replaceChildren();
+        selected.forEach(box => {
+            const state = availability[box.value] || 'unset';
+            if (state === 'yes') confirmed++;
+            const row = document.createElement('div');
+            row.className = 'mhav-coverage-day';
+            row.dataset.state = state;
+            const day = document.createElement('span');
+            day.textContent = box.closest('label')?.textContent.trim() || box.value;
+            const status = document.createElement('strong');
+            status.textContent = labels[state] || labels.unset;
+            row.append(day, status);
+            list.appendChild(row);
+        });
+        summary.textContent = selected.length === 0 ? 'Selecteer minimaal één lesdag.' :
+            (!trainer.value ? 'Nog geen instructeur gekozen.' : `${confirmed} van ${selected.length} lesdagen bevestigd beschikbaar`);
+    }
+    trainer.addEventListener('change', update);
+    checks.forEach(box => box.addEventListener('change', update));
+    update();
+}());
+</script>
+{% endblock %}
