@@ -1,3 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Mijn profiel | MHAV{% endblock %}
-{% block content %}<section class="page-intro"><div class="container"><h1>Mijn profiel</h1></div></section><section class="section"><div class="container"><form method="post" class="content-form">{% csrf_token %}{{ form.as_p }}<button class="button button-primary" type="submit">Opslaan</button></form></div></section>{% endblock %}
+{% block content %}
+<section class="page-intro"><div class="container"><a class="text-link" href="{% url 'accounts:dashboard' %}">← Terug naar Mijn MHAV</a><h1>Mijn profiel</h1><p>Je kunt je gegevens op elk moment aanpassen. Contact- en adresgegevens zijn optioneel.</p></div></section>
+<section class="section"><div class="container"><form method="post" class="content-form">{% csrf_token %}
+<h2>Persoonlijke gegevens</h2>
+{% for field in form %}<div class="form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+<button class="button button-primary" type="submit">Profiel opslaan</button>
+<p><a class="text-link" href="{% url 'accounts:password_change' %}">Wachtwoord wijzigen →</a></p>
+</form></div></section>{% endblock %}

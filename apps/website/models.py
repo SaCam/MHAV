@@ -35,6 +35,7 @@ class WebsiteImage(models.Model):
 
 
 class Instructor(models.Model):
+    user = models.OneToOneField("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="trainer_profile", verbose_name="Gekoppeld account")
     name = models.CharField("Naam", max_length=120)
     role = models.CharField("Rol / specialisatie", max_length=160, blank=True)
     biography = models.TextField("Introductie", blank=True)

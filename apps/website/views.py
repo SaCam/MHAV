@@ -43,8 +43,17 @@ def _section_page(request, page_key, edit_section=None, form=None):
         form = SectionTextForm(page_key=page_key, section=edit, content=copy)
     photo = WebsiteImage.objects.filter(key=page_key + "-hero").first()
     courses_qs = SitePage.objects.filter(is_published=True).filter(Q(slug__in=TRAINING_SLUGS) | Q(slug__startswith="cursus-")).exclude(slug="phv-knpv").order_by("menu_order", "title")
+    published_groups = []
+    if page_key == 'courses':
+        from apps.planning.models import TrainingGroup, Season
+        from django.db.models import Count
+        published_groups = (TrainingGroup.objects.filter(
+            season__status=Season.Status.ACTIVE, course__is_published=True,
+        ).select_related('course', 'season', 'trainer')
+         .annotate(placed_count=Count('enrollments', filter=Q(enrollments__status='placed')))
+         .order_by('season__starts_on', 'day', 'starts_at', 'name'))
     return render(request, "website/" + ("phv" if page_key == "phv" else "courses") + ".html", {
-        "section": page_key, "copy": copy, "photo": photo,
+        "section": page_key, "copy": copy, "photo": photo, "published_groups": published_groups,
         "feature": SitePage.objects.filter(is_published=True, slug="phv-knpv").first() if page_key == "phv" else None,
         "pages": courses_qs if page_key == "courses" else [],
         "can_text": can_text, "can_photo": can_photo, "can_edit_hero": can_text or can_photo, "can_manage_courses": can_manage_courses,
@@ -127,7 +136,7 @@ def section_page_save(request, page_key):
 
 def instructors(request):
     return render(request, "website/instructors.html", {
-        "instructors": Instructor.objects.filter(is_visible=True),
+        "instructors": Instructor.objects.filter(is_visible=True).filter(Q(user__isnull=True) | Q(user__is_active=True, user__groups__name="MHAV - Trainer")).distinct(),
     })
 
 
@@ -248,7 +257,7 @@ def _render_home(request, edit_section=None, section_form=None, section_photo_fo
         "home_content": content,
         "hero_photo": WebsiteImage.objects.filter(key="home-hero").first(),
         "about_photo": WebsiteImage.objects.filter(key="home-about").first(),
-        "instructors": Instructor.objects.filter(is_visible=True)[:3],
+        "instructors": Instructor.objects.filter(is_visible=True).filter(Q(user__isnull=True) | Q(user__is_active=True, user__groups__name="MHAV - Trainer")).distinct()[:3],
         "edit_section": edit_section, "section_form": section_form,
         "section_photo_form": section_photo_form,
         "can_text": can_text, "can_photos": can_photos,
@@ -263,9 +272,16 @@ def page(request, slug):
     related = SitePage.objects.filter(
         is_published=True, slug__in=TRAINING_SLUGS
     ).exclude(pk=item.pk)[:3] if slug in TRAINING_SLUGS else []
+    from apps.planning.models import TrainingGroup, Season
+    from django.db.models import Count
+    published_groups = (TrainingGroup.objects.filter(
+        course=item, season__status=Season.Status.ACTIVE,
+    ).select_related('season', 'trainer')
+     .annotate(placed_count=Count('enrollments', filter=Q(enrollments__status='placed')))
+     .order_by('season__starts_on', 'day', 'starts_at'))
     return render(
         request, "website/page.html",
-        {"page": item, "related_pages": related},
+        {"page": item, "related_pages": related, "published_groups": published_groups},
     )
 
 
@@ -279,20 +295,28 @@ def page_index(request):
     return render(request, "website/page_index.html", context)
 
 
-# MHAV course catalogue: independent from public page editing.
+# MHAV course catalogue: permanent course descriptions, reused by season planning.
+def _can_manage_course(user, action):
+    return user.is_authenticated and user.is_active and (
+        user.is_superuser or user.groups.filter(name="MHAV - Administrator").exists()
+        or user.has_perm("website." + action + "_sitepage")
+    )
+
 def _managed_course_queryset():
     return SitePage.objects.filter(Q(slug__in=TRAINING_SLUGS) | Q(slug__startswith="cursus-")).exclude(slug="phv-knpv")
 
 
 @login_required
 def course_manage(request):
-    if not (request.user.has_perm("website.add_sitepage") or request.user.has_perm("website.change_sitepage")):
+    if not (_can_manage_course(request.user, "add") or _can_manage_course(request.user, "change")):
         return HttpResponseForbidden("Geen toestemming")
+    if request.user.is_superuser or request.user.groups.filter(name="MHAV - Administrator").exists():
+        return redirect("planning:catalogue")
     return render(request, "website/course_manage.html", {
         "courses": _managed_course_queryset().order_by("menu_order", "title"),
-        "can_add": request.user.has_perm("website.add_sitepage"),
-        "can_change": request.user.has_perm("website.change_sitepage"),
-        "can_delete": request.user.has_perm("website.delete_sitepage"),
+        "can_add": _can_manage_course(request.user, "add"),
+        "can_change": _can_manage_course(request.user, "change"),
+        "can_delete": _can_manage_course(request.user, "delete"),
     })
 
 
@@ -304,7 +328,7 @@ def course_form(request, pk=None):
     import uuid
     course = get_object_or_404(_managed_course_queryset(), pk=pk) if pk is not None else None
     permission = "website.change_sitepage" if course else "website.add_sitepage"
-    if not request.user.has_perm(permission):
+    if not _can_manage_course(request.user, "change" if course else "add"):
         return HttpResponseForbidden("Geen toestemming")
     form = CourseEditForm(request.POST or None, instance=course)
     if request.method == "POST" and form.is_valid():
@@ -322,9 +346,14 @@ def course_form(request, pk=None):
 @login_required
 @require_http_methods(["POST"])
 def course_delete(request, pk):
-    if not request.user.has_perm("website.delete_sitepage"):
+    if not _can_manage_course(request.user, "delete"):
         return HttpResponseForbidden("Geen toestemming")
     course = get_object_or_404(_managed_course_queryset(), pk=pk)
+    if course.training_groups.exists():
+        course.is_published = False
+        course.save(update_fields=['is_published'])
+        messages.success(request, 'Cursus verborgen. Bestaande lesgroepen blijven gekoppeld.')
+        return redirect('website:course_manage')
     # Existing seeded training pages may be referenced elsewhere; hide instead of deleting them.
     if course.slug in TRAINING_SLUGS:
         course.is_published = False

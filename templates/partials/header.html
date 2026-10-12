@@ -12,7 +12,7 @@
         <a href="{% url 'website:contact' %}">Contact</a>
         {% if user.is_authenticated %}
           <a class="nav-login" href="{% url 'accounts:dashboard' %}">Mijn MHAV</a>
-          {% if user.is_superuser or perms.website.change_sectionpagecontent or perms.website.change_homepagecontent %}<a href="{% url 'accounts:beheer' %}">Beheer</a>{% endif %}
+          {% if mhav_can_manage_users or perms.website.change_sectionpagecontent or perms.website.change_homepagecontent %}<a href="{% url 'accounts:beheer' %}">Beheer</a>{% endif %}
         {% else %}
           <a href="{% url 'accounts:register' %}">Registreren</a>
           <a class="nav-login" href="{% url 'accounts:login' %}">Inloggen</a>

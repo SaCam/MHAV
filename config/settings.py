@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "apps.website.apps.WebsiteConfig",
     "apps.content.apps.ContentConfig",
     "apps.accounts.apps.AccountsConfig",
+    "apps.planning",
 ]
 
 MIDDLEWARE = [
@@ -79,6 +80,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
+                'apps.accounts.context_processors.mhav_permissions',
                 'django.contrib.messages.context_processors.messages',
             ],
         },

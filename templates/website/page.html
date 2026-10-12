@@ -13,6 +13,7 @@
   <div class="container page-detail-grid">
     <article class="page-detail-body">
       <div class="article-body">{{ page.body|linebreaks }}</div>
+      {% if published_groups %}<section class="mhav-course-availability"><h2>Lesgroepen</h2>{% for group in published_groups %}<div class="mhav-public-group"><strong>{{ group.season.name }} — {{ group.name }}</strong><p>{{ group.get_day_display }} {{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }}</p><p>{% if group.placed_count >= group.capacity %}Vol{% else %}{{ group.placed_count }} van {{ group.capacity }} plaatsen bezet{% endif %}</p></div>{% endfor %}</section>{% endif %}
       <div class="page-next-step">
         <h2>Vragen of interesse?</h2>
         <p>Neem gerust contact met ons op. We helpen je graag verder.</p>

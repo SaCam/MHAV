@@ -5,6 +5,10 @@ class MemberProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="member_profile")
     is_approved = models.BooleanField("Lidmaatschap bevestigd", default=False)
     phone = models.CharField(max_length=30, blank=True)
+    street = models.CharField(max_length=150, blank=True)
+    house_number = models.CharField(max_length=20, blank=True)
+    postal_code = models.CharField(max_length=12, blank=True)
+    city = models.CharField(max_length=100, blank=True)
     joined_at = models.DateField(null=True, blank=True)
 
     def __str__(self):

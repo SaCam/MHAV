@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Cursusaanbod | MHAV{% endblock %}
+{% block content %}
+<section class="page-intro"><div class="container"><a href="{% url 'planning:overview' %}">← Cursusadministratie</a><h1>Cursusaanbod</h1><p>Beheer de vaste cursusinformatie. Lesdagen en groepsindeling regel je onder Seizoenen.</p>
+{% if can_add %}<a class="button button-primary" href="{% url 'website:course_new' %}">+ Nieuwe cursus</a>{% endif %}
+</div></section>
+<section class="section"><div class="container"><div class="mhav-plan-grid">
+{% for course in courses %}<article class="mhav-plan-card"><h2>{{ course.title }}</h2><p>{{ course.introduction|truncatewords:22 }}</p><p>{% if course.is_published %}Gepubliceerd{% else %}Verborgen{% endif %}</p>
+{% if can_change %}<a class="button button-outline" href="{% url 'website:course_edit' course.pk %}">Cursus bewerken</a>{% endif %}
+</article>{% empty %}<p>Er zijn nog geen cursussen.</p>{% endfor %}
+</div></div></section>
+{% endblock %}

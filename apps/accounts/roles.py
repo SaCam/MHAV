@@ -5,8 +5,10 @@ ROLE_LABELS = {
     'MHAV - Lid': 'Lid',
     'MHAV - Trainer': 'Trainer',
     'MHAV - Websitebeheer': 'Website bewerken',
+    'MHAV - Administrator': 'Administrator',
 }
 ROLE_PERMISSIONS = {
+    'MHAV - Administrator': [],
     'MHAV - Lid': [],
     'MHAV - Trainer': [],  # Trainer-specific features will use group membership later.
     'MHAV - Websitebeheer': [
