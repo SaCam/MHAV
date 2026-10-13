@@ -1,46 +1,25 @@
 {% extends 'base.html' %}
-{% block extra_css %}
-    <link rel="stylesheet" href="/static/css/mhav-beheer.css">
-{% endblock %}
-{% block title %}
-    Seizoensplanning | MHAV
-{% endblock %}
+{% load static %}
+{% block title %}Cursusadministratie | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-beheer.css' %}"><link rel="stylesheet" href="{% static 'css/mhav-v21e.css' %}">{% endblock %}
 {% block content %}
-    <section class="page-intro">
-        <div class="container">
-            <a href="{% url 'accounts:beheer' %}">← Beheer</a>
-            <h1>
-                Cursusadministratie
-            </h1>
-            <p>
-                Beheer lesgroepen, instructeurs en combinaties per seizoen.
-            </p>
-        </div>
-    </section>
-    <section class="section">
-        <div class="container">
-            <div class="mhav-plan-actions">
-                <a class="button button-primary" href="{% url 'planning:application_list' %}">Inschrijfaanvragen</a><a class="button button-outline" href="{% url 'planning:catalogue' %}">Cursusaanbod</a><a class="button button-primary" href="{% url 'planning:new' 'seasons' %}">+ Nieuw seizoen</a><a class="button button-outline" href="{% url 'planning:records' 'dogs' %}">Honden ({{ dogs }})</a><a class="button button-outline" href="{% url 'planning:records' 'combinations' %}">Combinaties ({{ combinations }})</a><a class="button button-outline" href="{% url 'planning:records' 'enrollments' %}">Alle inschrijvingen</a>
-            </div>
-            <div class="mhav-plan-grid">
-                {% for season in seasons %}
-                    <a class="mhav-plan-card" href="{% url 'planning:season_detail' season.pk %}">
-                    <h2>
-                        {{ season.name }}
-                    </h2>
-                    <p>
-                        {{ season.starts_on|date:'d-m-Y' }} t/m {{ season.ends_on|date:'d-m-Y' }}
-                    </p>
-                    <p>
-                        {{ season.get_status_display }} · {{ season.group_count }} lesgroepen
-                    </p>
-                    <strong>Open seizoen →</strong></a>
-                {% empty %}
-                    <p>
-                        Er zijn nog geen seizoenen. Maak je eerste seizoen aan.
-                    </p>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
+<section class="page-intro"><div class="container"><a href="{% url 'accounts:beheer' %}">← Beheer</a><h1>Cursusadministratie</h1><p>Seizoenen, lesgroepen en aanmeldingen in één overzicht.</p></div></section>
+<section class="section"><div class="container mhav-admin-refresh">
+  <div class="mhav-admin-panel"><h2>Snelle navigatie</h2><div class="mhav-admin-actions">
+    <a class="button button-primary" href="{% url 'planning:application_list' %}">Inschrijfaanvragen</a>
+    <a class="button button-outline" href="{% url 'planning:catalogue' %}">Cursusaanbod</a>
+    <a class="button button-primary" href="{% url 'planning:new' 'seasons' %}">+ Nieuw seizoen</a>
+    <a class="button button-outline" href="{% url 'planning:records' 'dogs' %}">Honden ({{ dogs }})</a>
+    <a class="button button-outline" href="{% url 'planning:records' 'combinations' %}">Combinaties ({{ combinations }})</a>
+    <a class="button button-outline" href="{% url 'planning:records' 'enrollments' %}">Alle inschrijvingen</a>
+  </div></div>
+  <div class="mhav-admin-heading"><h2>Seizoenen</h2><p>Open een seizoen om lesgroepen, instructeurs en cursusinschrijvingen te beheren.</p></div>
+  <div class="mhav-season-grid">{% for season in seasons %}
+    <a class="mhav-season-card" href="{% url 'planning:season_detail' season.pk %}">
+      <div class="mhav-card-top"><span class="mhav-status-chip">{{ season.get_status_display }}</span><span class="mhav-card-arrow">↗</span></div>
+      <h3>{{ season.name }}</h3><p class="mhav-season-date">▦ {{ season.starts_on|date:'d M Y' }} – {{ season.ends_on|date:'d M Y' }}</p>
+      <div class="mhav-season-bottom"><strong>{{ season.group_count }}</strong><span>lesgroep{{ season.group_count|pluralize:'en' }}</span><span class="mhav-open-link">Seizoen bekijken →</span></div>
+    </a>
+  {% empty %}<div class="mhav-admin-panel"><p>Er zijn nog geen seizoenen. Maak je eerste seizoen aan.</p></div>{% endfor %}</div>
+</div></section>
 {% endblock %}

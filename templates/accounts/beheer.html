@@ -20,6 +20,9 @@
     <section class="section">
         <div class="container">
             <div class="mhav-manage-grid">
+                {% if can_execute_courses %}
+                    <a class="mhav-manage-card" href="{% url 'planning:execution_list' %}"><span class="mhav-manage-icon">✓</span><h2>Cursusuitvoering</h2><p>Bekijk jouw lesgroepen, registreer eindresultaten en sluit cursussen af.</p><strong>Open cursusuitvoering →</strong></a>
+                {% endif %}
                 {% if can_manage_users %}
                     <a class="mhav-manage-card" href="{% url 'planning:overview' %}"><span class="mhav-manage-icon">▦</span>
                     <h2>
@@ -40,6 +43,7 @@
                     </p>
                     <strong>{{ user_count }} accounts · {{ member_count }} leden →</strong></a>
                 {% endif %}
+                {% if can_edit_website %}
                 <a class="mhav-manage-card" href="{% url 'website:home' %}"><span class="mhav-manage-icon">✎</span>
                 <h2>
                     Website bewerken
@@ -48,6 +52,7 @@
                     Open de pagina en gebruik de bewerkknoppen bij de afzonderlijke secties.
                 </p>
                 <strong>Ga naar homepage →</strong></a>
+                {% endif %}
             </div>
         </div>
     </section>

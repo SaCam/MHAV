@@ -64,6 +64,17 @@ class TrainingGroup(models.Model):
     capacity = models.PositiveSmallIntegerField('Maximum deelnemers', default=10)
     notes = models.TextField('Opmerkingen', blank=True)
     lesson_dates_selected = models.JSONField('Geplande leszaterdagen', default=list, blank=True)
+    class ExecutionStatus(models.TextChoices):
+        PLANNED = 'planned', 'Gepland'
+        ACTIVE = 'active', 'Bezig'
+        COMPLETED = 'completed', 'Afgerond'
+        CANCELLED = 'cancelled', 'Geannuleerd'
+    execution_status = models.CharField('Uitvoering', max_length=12, choices=ExecutionStatus.choices, default=ExecutionStatus.PLANNED)
+    execution_started_at = models.DateTimeField(null=True, blank=True)
+    execution_closed_at = models.DateTimeField(null=True, blank=True)
+    execution_closed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='closed_mhav_groups')
+    planning_locked_at = models.DateTimeField('Conceptplanning goedgekeurd op', null=True, blank=True)
+    planning_locked_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_mhav_group_plans')
     class Meta:
         ordering = ('season__starts_on','day','starts_at','name')
         constraints = [models.UniqueConstraint(fields=('season','name'), name='unique_mhav_group_per_season')]
@@ -75,6 +86,11 @@ class TrainingGroup(models.Model):
     def scheduled_dates(self):
         from datetime import date
         return [date.fromisoformat(day) for day in self.lesson_dates_selected]
+
+    @property
+    def first_lesson_date(self):
+        """Earliest actual scheduled lesson; never infer from the weekday or season start."""
+        return min(self.scheduled_dates, default=None)
 
     def clean(self):
         super().clean()
@@ -126,13 +142,21 @@ class Enrollment(models.Model):
     status = models.CharField('Status', max_length=12, choices=Status.choices, default=Status.PLACED)
     notes = models.TextField('Opmerkingen', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    class Outcome(models.TextChoices):
+        PENDING = 'pending', 'In opleiding'
+        COMPLETED = 'completed', 'Afgerond'
+        STOPPED = 'stopped', 'Gestopt'
+        NOT_COMPLETED = 'not_completed', 'Niet afgerond'
+    outcome = models.CharField('Eindresultaat', max_length=16, choices=Outcome.choices, default=Outcome.PENDING)
+    capacity_override_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='mhav_capacity_exceptions')
+    capacity_override_at = models.DateTimeField(null=True, blank=True)
     class Meta:
         constraints = [models.UniqueConstraint(fields=('group','combination'), name='unique_mhav_enrollment')]
         ordering = ('group','created_at')
     def clean(self):
         if self.group_id and self.combination_id and self.status == self.Status.PLACED:
             occupied = Enrollment.objects.filter(group_id=self.group_id, status=self.Status.PLACED).exclude(pk=self.pk).count()
-            if occupied >= self.group.capacity:
+            if occupied >= self.group.capacity and not self.capacity_override_by_id:
                 raise ValidationError({'status': 'Deze groep is vol. Gebruik de wachtlijst.'})
     def __str__(self): return f'{self.combination} / {self.group}'
 
@@ -149,6 +173,8 @@ class CourseApplication(models.Model):
     created_at = models.DateTimeField('Ontvangen op', auto_now_add=True)
     updated_at = models.DateTimeField('Bijgewerkt op', auto_now=True)
     status = models.CharField('Status', max_length=12, choices=Status.choices, default=Status.NEW)
+    confirmation_email_status = models.CharField('Bevestigingsmail', max_length=12, choices=[('not_sent', 'Nog niet verzonden'), ('sent', 'Verzonden'), ('failed', 'Verzenden mislukt')], default='not_sent')
+    confirmation_email_sent_at = models.DateTimeField('Bevestigingsmail verzonden op', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_applications')
     first_name = models.CharField('Voornaam', max_length=100)
     last_name = models.CharField('Achternaam', max_length=120)
@@ -180,6 +206,16 @@ class CourseApplication(models.Model):
     admin_notes = models.TextField('Interne opmerkingen', blank=True)
     linked_combination = models.ForeignKey(Combination, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_applications')
     linked_enrollment = models.ForeignKey(Enrollment, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_applications')
+    class Outcome(models.TextChoices):
+        PENDING = 'pending', 'In opleiding'
+        COMPLETED = 'completed', 'Afgerond'
+        STOPPED = 'stopped', 'Gestopt'
+        NOT_COMPLETED = 'not_completed', 'Niet afgerond'
+    outcome = models.CharField('Eindresultaat', max_length=16, choices=Outcome.choices, default=Outcome.PENDING)
+    capacity_override_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='mhav_draft_capacity_exceptions')
+    capacity_override_at = models.DateTimeField(null=True, blank=True)
+    placement_source = models.CharField('Herkomst conceptplaatsing', max_length=12, choices=[('legacy', 'Onbekend (bestaand)'), ('manual', 'Handmatig'), ('automatic', 'Automatisch')], default='legacy')
+    proposed_group = models.ForeignKey(TrainingGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='proposed_applications', verbose_name='Voorlopige lesgroep')
 
     class Meta:
         ordering = ('-created_at',)

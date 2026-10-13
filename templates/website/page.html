@@ -49,14 +49,12 @@
                             <p><strong>{{ upcoming_offering.season.name }}</strong> · {{ upcoming_offering.season.starts_on|date:'d-m-Y' }} t/m {{ upcoming_offering.season.ends_on|date:'d-m-Y' }}</p>
                             {% if upcoming_open %}<p><strong>✓ Inschrijving open</strong></p>
                             {% else %}<p><strong>Inschrijving opent binnenkort</strong></p>{% endif %}
-                        {% else %}<p><strong>Nog niet ingepland voor inschrijving.</strong></p>{% endif %}
-                        <h2>
-                            Meedoen aan {{ page.title }}?
-                        </h2>
+                        {% else %}<p><strong>Nog geen seizoen gepland — open aanmelden kan wel.</strong></p>{% endif %}
+                        <h2>Inschrijven voor deze cursus</h2>
                         <p>
-                            Vul het inschrijfformulier in. We nemen daarna contact met je op over de mogelijkheden en beschikbare lesgroepen.
+                            Meld je interesse aan. Zonder geopend seizoen is dit een open aanmelding; we nemen contact met je op zodra er mogelijkheden zijn.
                         </p>
-                        {% if upcoming_open %}<a class="button button-primary" href="{% url 'website:application' %}?course={{ page.pk }}&amp;season={{ upcoming_offering.season_id }}">Inschrijven voor deze cursus →</a>{% else %}<a class="button button-outline" href="{% url 'website:contact' %}">Vraag naar de mogelijkheden →</a>{% endif %}
+                        {% if upcoming_open %}<a class="button button-primary" href="{% url 'website:application' %}?course={{ page.pk }}&amp;season={{ upcoming_offering.season_id }}">Inschrijven voor deze cursus →</a>{% else %}<a class="button button-primary" href="{% url 'website:application' %}?course={{ page.pk }}">Open aanmelding versturen →</a>{% endif %}
                     </div>
                 {% endif %}
                 <div class="page-next-step">

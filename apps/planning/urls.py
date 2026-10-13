@@ -1,11 +1,20 @@
 from django.urls import path
-from . import views
+from . import views, execution_views
 app_name='planning'
 urlpatterns=[
+    path('uitvoering/', execution_views.execution_list, name='execution_list'),
+    path('uitvoering/<int:pk>/', execution_views.execution_detail, name='execution_detail'),
+    path('uitvoering/<int:pk>/actie/', execution_views.execution_action, name='execution_action'),
     path('',views.overview,name='overview'),
     path('instructeur/seizoenen/', views.trainer_seasons, name='trainer_seasons'),
     path('instructeur/seizoen/<int:pk>/beschikbaarheid/', views.trainer_availability, name='trainer_availability'),
     path('aanmeldingen/', views.application_list, name='application_list'),
+    path('aanmeldingen/automatisch/', views.application_auto_plan, name='application_auto_plan'),
+    path('aanmeldingen/planning/actie/', views.application_plan_action, name='application_plan_action'),
+    path('aanmeldingen/planning/', views.application_plan_review, name='application_plan_review'),
+    path('aanmeldingen/<int:pk>/plannen/', views.application_assign, name='application_assign'),
+    path('aanmeldingen/<int:pk>/bevestigen/', views.application_confirm, name='application_confirm'),
+    path('aanmeldingen/<int:pk>/combinatie/', views.application_link_combination, name='application_link_combination'),
     path('aanmeldingen/<int:pk>/', views.application_detail, name='application_detail'),
     path('cursusaanbod/', views.catalogue, name='catalogue'),
     path('seizoen/<int:pk>/cursussen/', views.season_course_offerings, name='season_course_offerings'),

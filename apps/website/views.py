@@ -290,7 +290,7 @@ def page(request, slug):
     upcoming_open = upcoming_offering.accepts_applications() if upcoming_offering else False
     return render(
         request, "website/page.html",
-        {"page": item, "related_pages": related, "published_groups": published_groups, "upcoming_offering": upcoming_offering, "upcoming_open": upcoming_open, "is_course_page": item.slug in TRAINING_SLUGS or item.slug.startswith("cursus-")},
+        {"page": item, "related_pages": related, "published_groups": published_groups, "upcoming_offering": upcoming_offering, "upcoming_open": upcoming_open, "is_course_page": _managed_course_queryset().filter(pk=item.pk).exists()},
     )
 
 

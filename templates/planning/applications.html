@@ -1,58 +1,109 @@
 {% extends 'base.html' %}
-{% block title %}
-    Inschrijfaanvragen | MHAV
-{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="/static/css/mhav-beheer.css">
-{% endblock %}
+{% load static %}
+{% block title %}Inschrijfaanvragen | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-v21o.css' %}?v=21o1">
+<link rel="stylesheet" href="{% static 'css/mhav-beheer.css' %}">
+<link rel="stylesheet" href="{% static 'css/mhav-v21e.css' %}">
+<link rel="stylesheet" href="{% static 'css/mhav-v21f.css' %}">{% endblock %}
 {% block content %}
-    <section class="page-intro">
-        <div class="container">
-            <a href="{% url 'planning:overview' %}">← Cursusadministratie</a>
-            <h1>
-                Inschrijfaanvragen
-            </h1>
-            <p>
-                {{ total }} aanvragen
-                {% if current_status %}
-                    met geselecteerde status
-                {% endif %}
-                . Bekijk de gegevens en bepaal de vervolgstap.
-            </p>
+<section class="page-intro">
+  <div class="container"><a href="{% url 'planning:overview' %}">← Cursusadministratie</a>
+    <h1>Inschrijfaanvragen</h1>
+    <p>{{ total }} aanvragen{% if current_status %} met deze status{% endif %}. Bekijk in één oogopslag de
+      planningsmogelijkheden.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container mhav-admin-refresh">
+    <div class="mhav-plan-toolbar">
+      <a class="button button-primary" href="{% url 'planning:application_plan_review' %}">Gefaseerd automatisch plannen</a>
+      <a class="button button-outline" href="{% url 'planning:application_plan_review' %}">Controleer conceptplanning ({{ draft_count }})</a>
+    </div>
+    <form method="get" action="{% url 'planning:application_list' %}" class="mhav-application-filters">
+      <div class="mhav-application-filter-grid">
+        <label>Status
+          <select name="status">
+            <option value="">Alle statussen</option>
+            {% for value, label in statuses %}
+              <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Seizoen
+          <select name="season">
+            <option value="">Alle seizoenen</option>
+            <option value="open" {% if current_season == 'open' %}selected{% endif %}>Open aanmeldingen (geen seizoen)</option>
+            {% for season in seasons %}
+              <option value="{{ season.pk }}" {% if current_season == season.pk|stringformat:'s' %}selected{% endif %}>{{ season.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Cursus
+          <select name="course">
+            <option value="">Alle cursussen</option>
+            {% for course in courses %}
+              <option value="{{ course.pk }}" {% if current_course == course.pk|stringformat:'s' %}selected{% endif %}>{{ course.title }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Zoeken
+          <input name="q" type="search" value="{{ search_query }}" placeholder="Naam, hond of e-mail">
+        </label>
+      </div>
+      <div class="mhav-application-filter-actions">
+        <button class="button button-primary" type="submit">Filter toepassen</button>
+        <a class="button button-outline" href="{% url 'planning:application_list' %}">Wis filters</a>
+        <span>{{ total }} resultaten</span>
+      </div>
+    </form>
+    <div class="mhav-app-grid">{% for item in applications %}
+      <article class="mhav-app-card{% if item.linked_enrollment_id %} mhav-final-card{% endif %}">
+        <div class="mhav-card-top"><span class="mhav-status-chip">{% if item.linked_enrollment_id %}✓ Definitief ingeschreven{% else %}{{ item.planning_state }} · {{ item.get_status_display }}{% endif %}</span><span
+            class="mhav-app-date">{{ item.created_at|date:'d M Y · H:i' }}</span></div>
+        <h2>{{ item.first_name }} &nbsp; {% if item.middle_name %} {{ item.middle_name }} &nbsp; {% endif %} {{ item.last_name }}</h2>
+        <p class="mhav-app-dog">🐾 {{ item.dog_name }}{% if item.dog_breed %} · {{ item.dog_breed }}{% endif %}</p>
+        <div class="mhav-app-meta">
+          <div><small>Cursus</small><strong>{{ item.course.title|default:'Niet gekozen' }}</strong></div>
+          <div><small>Seizoen</small><strong>{% if item.open_application %}Open aanmelding{% else %}{{ item.season.name }}{% endif %}</strong></div>
         </div>
-    </section>
-    <section class="section">
-        <div class="container">
-            <div class="mhav-plan-actions">
-                <a class="button button-outline" href="{% url 'planning:application_list' %}">Alle</a>
-                {% for value,label in statuses %}
-                    <a class="button button-outline" href="?status={{ value }}">{{ label }}</a>
-                {% endfor %}
-            </div>
-            <div class="mhav-plan-grid">
-                {% for item in applications %}
-                    <a class="mhav-plan-card" href="{% url 'planning:application_detail' item.pk %}">
-                    <h2>
-                        {{ item.first_name }} {{ item.last_name }}
-                    </h2>
-                    <p>
-                        <strong>{{ item.dog_name }}</strong> · {{ item.course.title|default:'Geen cursus' }}
-                    </p>
-                    <p>
-                        {{ item.created_at|date:'d-m-Y H:i' }} · {{ item.get_status_display }}
-                    </p>
-                    <strong>Bekijken →</strong></a>
-                {% empty %}
-                    <p>
-                        Geen aanvragen gevonden.
-                    </p>
-                {% endfor %}
-            </div>
-            {% if total > 250 %}
-                <p>
-                    De eerste 250 aanvragen worden getoond.
-                </p>
-            {% endif %}
+        {% if item.linked_enrollment_id %}
+        <div class="mhav-final-details">
+          <strong>Definitieve plaatsing</strong>
+          <div><small>Lesgroep</small><b>{{ item.linked_enrollment.group.name }}</b></div>
+          <div><small>Lesdag en tijd</small><b>{{ item.linked_enrollment.group.get_day_display }} {{ item.linked_enrollment.group.starts_at|time:'H:i' }}–{{ item.linked_enrollment.group.ends_at|time:'H:i' }}</b></div>
+          <div><small>Seizoen</small><b>{{ item.linked_enrollment.group.season.name }}</b></div>
+          <div><small>Bevestigingsmail</small><b>{{ item.get_confirmation_email_status_display }}{% if item.confirmation_email_sent_at %} · {{ item.confirmation_email_sent_at|date:'d-m-Y H:i' }}{% endif %}</b></div>
         </div>
-    </section>
+        <div class="mhav-app-actions"><a class="button button-outline" href="{% url 'planning:application_detail' item.pk %}">Inschrijving bekijken →</a>{% if item.email %}<a class="button button-outline" href="mailto:{{ item.email }}">E-mail</a>{% endif %}</div>
+        {% else %}
+        {% if item.open_application %}<p class="mhav-app-note">Nog niet gekoppeld aan een seizoen of lesgroep.</p>
+        {% elif item.group_options %}
+        <div class="mhav-app-capacity"><strong>Lesmomenten & beschikbare plaatsen</strong>
+          {% for option in item.group_options %}<div class="mhav-capacity-row"><span>{{ option.group.get_day_display }}
+              {{ option.group.starts_at|time:'H:i' }} · {{ option.group.name }}{% if option.preference == 'preferred' %}
+              ★ Voorkeur{% elif option.preference == 'unavailable' %} · Kan niet{% elif option.preference == 'ok' %} ·
+              Kan wel{% endif %}</span><span
+              class="{% if option.available %}mhav-capacity-free{% else %}mhav-capacity-full{% endif %}">
+              {% if option.available %}{{ option.free }} vrij{% else %}Vol{% endif %}</span></div>{% endfor %}
+        </div>
+        {% if item.has_preference %}<p class="mhav-app-note">{% if item.preferred_available %}✓ Voorkeurstijd heeft nog
+          plaats{% else %}⚠ Voorkeurstijd momenteel vol{% endif %}</p>{% endif %}
+        {% else %}<p class="mhav-app-note">Geen lesgroepen beschikbaar voor dit seizoen en deze cursus.</p>{% endif %}
+        {% if item.availability %}<p class="mhav-app-preference"><strong>Opgegeven beschikbaarheid:</strong> {{ item.availability|truncatechars:145 }}</p>{% endif %}
+        {% if item.proposed_group %}
+          <p class="mhav-app-note"><strong>Concept:</strong> {{ item.proposed_group.name }} · {{ item.proposed_group.starts_at|time:'H:i' }}</p>
+        {% endif %}
+        <div class="mhav-app-actions"><a class="button button-primary"
+            href="{% url 'planning:application_detail' item.pk %}">Handmatig plannen / beoordelen →</a>{% if item.email %}<a
+            class="button button-outline" href="mailto:{{ item.email }}">E-mail</a>{% endif %}{% if item.phone %}<a
+            class="button button-outline" href="tel:{{ item.phone }}">Bellen</a>{% endif %}</div>
+        {% endif %}
+      </article>
+      {% empty %}<div class="mhav-admin-panel">
+        <p>Geen aanvragen gevonden.</p>
+      </div>{% endfor %}
+    </div>
+    {% if total > 250 %}<p>Maximaal 250 aanvragen getoond. Gebruik de filters om de lijst te beperken.</p>{% endif %}
+  </div>
+</section>
 {% endblock %}

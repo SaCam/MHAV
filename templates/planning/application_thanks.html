@@ -1,31 +1,18 @@
 {% extends 'base.html' %}
-{% block title %}
-    Aanmelding ontvangen | MHAV
-{% endblock %}
+{% block title %}Aanmelding ontvangen | MHAV{% endblock %}
 {% block content %}
-    <section class="page-intro">
-        <div class="container">
-            <h1>
-                Bedankt voor je aanmelding!
-            </h1>
-            <p>
-                Je inschrijfaanvraag is ontvangen. De cursusadministratie neemt contact met je op over de mogelijkheden. Je bent nog niet definitief ingedeeld.
-            </p>
-            {% if application and not application.user_id and not request.user.is_authenticated %}
-                <div class="mhav-registration" style="max-width:680px;margin:24px 0">
-                    <h2>
-                        Ook een account bij MHAV?
-                    </h2>
-                    <p>
-                        Je hebt je gegevens al ingevuld. Maak vrijblijvend een websiteaccount aan zodat je later je gegevens kunt terugvinden. Je cursusaanmelding is al ontvangen, ook als je geen account aanmaakt.
-                    </p>
-                    <form method="post" action="{% url 'website:application_account_invite' %}">
-                        {% csrf_token %}
-                        <button class="button button-primary" type="submit">Stuur mij een verificatielink per e-mail →</button>
-                    </form>
-                </div>
-            {% endif %}
-            <a class="button button-primary" href="{% url 'website:courses' %}">Terug naar cursussen →</a>
-        </div>
-    </section>
+<section class="page-intro"><div class="container">
+<h1>Bedankt voor je aanmelding!</h1>
+<p>Je aanvraag voor {{ application.dog_name|default:'je hond' }} is ontvangen. Je bent nog niet definitief ingedeeld.</p>
+{% if owns_application %}
+<div class="mhav-followup"><h2>Volg je aanvraag in Mijn MHAV</h2><p>Je kunt de status en later je definitieve lesgroep bekijken in je persoonlijke omgeving.</p><a class="button button-primary" href="{% url 'accounts:dashboard' %}">Naar Mijn MHAV →</a></div>
+{% elif request.user.is_authenticated %}
+<div class="mhav-followup"><h2>Ingelogd met een ander e-mailadres</h2><p>Deze aanvraag gebruikt een ander e-mailadres dan je account. De aanvraag is ontvangen, maar niet aan dit account gekoppeld. Neem contact op met MHAV om dit te corrigeren.</p></div>
+{% elif known_email %}
+<div class="mhav-followup"><h2>Je hebt al een MHAV-account</h2><p>Log in om deze aanvraag aan je account te koppelen en de voortgang in Mijn MHAV te bekijken.</p><a class="button button-primary" href="{% url 'accounts:login' %}?next={% url 'accounts:dashboard' %}">Inloggen bij Mijn MHAV →</a></div>
+{% elif application %}
+<div class="mhav-followup"><h2>Volg je aanvraag via Mijn MHAV</h2><p>Je gegevens zijn al ingevuld. Maak in een paar stappen een account aan om je aanmelding te volgen. Dit is vrijwillig; je aanvraag is al verzonden.</p><a class="button button-primary" href="{% url 'accounts:register' %}">Mijn MHAV-account aanmaken →</a></div>
+{% endif %}
+<p><a class="text-link" href="{% url 'website:courses' %}">Terug naar cursussen →</a></p>
+</div></section>
 {% endblock %}

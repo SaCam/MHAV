@@ -5,23 +5,61 @@ from .forms import ProfileForm, RegistrationForm, MemberDetailsForm
 from .models import MemberProfile
 
 
+def _pending_application(request):
+    """Only the application submitted in this browser session is eligible to be linked."""
+    from apps.planning.models import CourseApplication
+    pk = request.session.get('mhav_pending_application_id')
+    return CourseApplication.objects.filter(pk=pk).first() if pk else None
+
+
+def _claim_pending_application(request):
+    """Never claim arbitrary applications based on an email lookup alone."""
+    from apps.planning.models import CourseApplication
+    application = _pending_application(request)
+    if not application or not request.user.is_authenticated:
+        return
+    if application.email.strip().casefold() != request.user.email.strip().casefold():
+        return
+    if application.user_id is None:
+        CourseApplication.objects.filter(pk=application.pk, user__isnull=True).update(user=request.user)
+    if application.user_id in (None, request.user.pk):
+        request.session.pop('mhav_pending_application_id', None)
+
+
 def register(request):
     if request.user.is_authenticated:
         return redirect("accounts:dashboard")
-    form = RegistrationForm(request.POST or None)
+    pending = _pending_application(request)
+    initial = {}
+    if pending:
+        initial = {'first_name': pending.first_name, 'last_name': pending.last_name, 'email': pending.email}
+    form = RegistrationForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
-        user = form.save()
+        # A new account can claim only the application from the same browser session.
+        # The email is not verified until an email-verification feature is added.
+        from django.db import transaction
+        with transaction.atomic():
+            user = form.save()
+            if pending and user.email.strip().casefold() == pending.email.strip().casefold() and pending.user_id is None:
+                from apps.planning.models import CourseApplication
+                CourseApplication.objects.filter(pk=pending.pk, user__isnull=True).update(user=user)
+                profile = MemberProfile.objects.get(user=user)
+                for field in ('phone', 'street', 'house_number', 'postal_code', 'city'):
+                    setattr(profile, field, getattr(pending, field, '') or '')
+                profile.save()
         login(request, user)
+        _claim_pending_application(request)
         return redirect("accounts:dashboard")
-    return render(request, "accounts/register.html", {"form": form})
+    return render(request, "accounts/register.html", {"form": form, "from_application": bool(pending)})
 
 
 @login_required
 def dashboard(request):
+    _claim_pending_application(request)
     profile, _ = MemberProfile.objects.get_or_create(user=request.user)
     is_complete = all([request.user.first_name, request.user.last_name, request.user.email,
                        profile.phone, profile.street, profile.house_number, profile.postal_code, profile.city])
-    from apps.planning.models import Season, TrainerSeasonAvailability
+    from apps.planning.models import Season, TrainerSeasonAvailability, CourseApplication, Enrollment
 
     trainer_role = request.user.is_superuser or request.user.groups.filter(
         name="MHAV - Trainer"
@@ -35,7 +73,17 @@ def dashboard(request):
         }
         upcoming_seasons = [(season, responses.get(season.pk)) for season in seasons]
 
+    applications = CourseApplication.objects.filter(user=request.user).select_related(
+        'season', 'course', 'proposed_group', 'linked_enrollment__group'
+    ).order_by('-created_at')
+    completed_enrollments = Enrollment.objects.filter(
+        combination__handler=request.user,
+        group__execution_status='completed',
+        status=Enrollment.Status.PLACED,
+    ).select_related('group__season', 'combination__dog').order_by('-group__execution_closed_at')
     return render(request, "accounts/dashboard.html", {
+        "completed_enrollments": completed_enrollments,
+        "my_applications": applications,
         "profile": profile, "is_member": request.user.groups.filter(name='MHAV - Lid').exists(),
         "profile_complete": is_complete,
         "is_trainer": trainer_role,
@@ -75,13 +123,15 @@ def _is_account_admin(user):
 
 @login_required
 def beheer(request):
-    if not (_is_account_admin(request.user) or request.user.has_perm('website.change_sectionpagecontent') or request.user.has_perm('website.change_homepagecontent')):
+    if not (_is_account_admin(request.user) or any(request.user.has_perm(p) for p in ('website.change_sectionpagecontent', 'website.change_homepagecontent', 'website.change_websiteimage', 'website.change_sitepage', 'website.add_sitepage', 'website.change_instructor', 'content.change_newspost', 'content.add_newspost'))):
         from django.core.exceptions import PermissionDenied
         raise PermissionDenied
     return render(request, 'accounts/beheer.html', {
         'user_count': get_user_model().objects.count(),
         'member_count': get_user_model().objects.filter(groups__name='MHAV - Lid').count(),
         'can_manage_users': _is_account_admin(request.user),
+        'can_execute_courses': _is_account_admin(request.user),
+        'can_edit_website': _is_account_admin(request.user) or any(request.user.has_perm(p) for p in ('website.change_sectionpagecontent', 'website.change_homepagecontent', 'website.change_websiteimage', 'website.change_sitepage', 'website.add_sitepage', 'website.change_instructor', 'content.change_newspost', 'content.add_newspost')),
     })
 
 

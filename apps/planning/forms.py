@@ -142,12 +142,11 @@ class CourseApplicationForm(StyledForm):
         from .models import SeasonCourseOffering
         open_offerings = [o for o in SeasonCourseOffering.objects.select_related('season', 'course').all() if o.accepts_applications()]
         self.fields['season'].queryset = Season.objects.filter(pk__in=[o.season_id for o in open_offerings])
-        self.fields['season'].required = True
+        self.fields['season'].required = False
         self.fields['season'].empty_label = 'Geen voorkeur / nog niet bekend'
         self.fields['course'].queryset = SitePage.objects.filter(is_published=True).filter(
             Q(slug__in=TRAINING_SLUGS) | Q(slug__startswith='cursus-')
         ).exclude(slug='phv-knpv').order_by('menu_order', 'title')
-        self.fields['course'].queryset = self.fields['course'].queryset.filter(pk__in=[o.course_id for o in open_offerings])
         self.fields['course'].required = True
         self.fields['course'].empty_label = 'Kies een cursus'
         self.fields['dog_birth_date'].required = False
@@ -165,6 +164,8 @@ class CourseApplicationForm(StyledForm):
             offering = SeasonCourseOffering.objects.filter(season=season, course=course).first()
             if not offering or not offering.accepts_applications():
                 raise forms.ValidationError('Deze cursus is momenteel niet open voor inschrijving in dit seizoen.')
+        if season and not course:
+            raise forms.ValidationError('Kies een cursus bij dit seizoen.')
         return data
 
     def clean_email(self):

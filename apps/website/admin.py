@@ -37,3 +37,21 @@ class ContactMessageAdmin(admin.ModelAdmin):
     search_fields = ("name", "email", "subject", "message")
     readonly_fields = ("name", "email", "subject", "message", "created_at")
     list_editable = ("handled",)
+
+from .models import HomePageContent, SectionPageContent
+
+
+@admin.register(HomePageContent)
+class HomePageContentAdmin(admin.ModelAdmin):
+    list_display = ('hero_title', 'about_title', 'contact_title')
+    fieldsets = (
+        ('Welkom', {'fields': ('hero_title', 'hero_intro')}),
+        ('Over ons', {'fields': ('about_title', 'about_paragraph_1', 'about_paragraph_2')}),
+        ('Contact', {'fields': ('contact_title', 'contact_intro')}),
+    )
+
+
+@admin.register(SectionPageContent)
+class SectionPageContentAdmin(admin.ModelAdmin):
+    list_display = ('key',)
+    search_fields = ('key',)

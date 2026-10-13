@@ -50,7 +50,7 @@
                         {% endfor %}
                     </div>
                     <p>
-                        De cursuskeuze en het seizoen bepalen welke lesmomenten beschikbaar zijn. De beschikbare lesmomenten worden automatisch bijgewerkt wanneer je een cursus of seizoen kiest.
+                        Is jouw cursus nog niet open voor inschrijving? Kies <strong>Open aanmelding (zonder seizoen)</strong>. Je toont dan interesse, maar hebt nog geen cursusplaats. Alleen cursussen met geopende inschrijving zijn bij een seizoen te kiezen.
                     </p>
                 </fieldset>
                 <fieldset>
@@ -104,7 +104,7 @@
                 <fieldset>
                     <legend>5. Beschikbaarheid</legend>
                     <p>
-                        Geef per lesmoment aan of je kunt. We proberen rekening te houden met je voorkeuren; plaatsing op een bepaald tijdstip is niet gegarandeerd.
+                        Geef bij gepubliceerde lesmomenten je voorkeur aan, of beschrijf hieronder welke zaterdagen en tijden passen. Een voorkeur garandeert geen plaats.
                     </p>
                     {% if groups %}
                         <div class="mhav-time-options">
@@ -162,6 +162,44 @@
  const rows=document.querySelectorAll('.mhav-time-row');
  function refresh(){ rows.forEach(row=>{ const show=!!course?.value && row.dataset.course===course.value && (!season?.value || row.dataset.season===season.value); row.hidden=!show; if(!show)row.querySelectorAll('input[type=radio]').forEach(input=>input.checked=false); }); }
  course?.addEventListener('change',refresh); season?.addEventListener('change',refresh); refresh();
+})();
+</script>
+
+<script id="mhav-open-offerings" type="application/json">{{ open_pairs_json|safe }}</script>
+<script>
+(function () {
+  const season = document.getElementById('id_season');
+  const course = document.getElementById('id_course');
+  const data = document.getElementById('mhav-open-offerings');
+  if (!season || !course || !data) return;
+  let pairs;
+  try { pairs = JSON.parse(data.textContent); } catch (_) { return; }
+  const original = Array.from(course.options).map(option => ({value: option.value, label: option.textContent}));
+  const note = document.createElement('p');
+  note.setAttribute('role', 'status');
+  note.style.marginTop = '8px';
+  course.parentNode.appendChild(note);
+  const blankSeason = Array.from(season.options).find(o => !o.value);
+  if (blankSeason) blankSeason.textContent = 'Open aanmelding (zonder seizoen)';
+  function update() {
+    const sid = season.value;
+    const previous = course.value;
+    const allowed = new Set(pairs.filter(pair => String(pair[0]) === sid).map(pair => String(pair[1])));
+    course.replaceChildren();
+    original.forEach(item => {
+      if (!sid || !item.value || allowed.has(item.value)) {
+        const option = document.createElement('option');
+        option.value = item.value;
+        option.textContent = item.label;
+        course.appendChild(option);
+      }
+    });
+    if (Array.from(course.options).some(o => o.value === previous)) course.value = previous;
+    else course.value = '';
+    note.textContent = sid ? (allowed.size ? 'Alleen cursussen met geopende inschrijving worden getoond.' : 'Geen cursussen open in dit seizoen. Kies Open aanmelding om interesse door te geven.') : 'Open aanmelding: je kiest een cursus, maar nog geen seizoen of definitieve plaats.';
+  }
+  season.addEventListener('change', update);
+  update();
 })();
 </script>
 {% endblock %}

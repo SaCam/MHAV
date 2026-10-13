@@ -3,7 +3,7 @@
     Mijn MHAV
 {% endblock %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-season-ux.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-season-ux.css' %}"><link rel="stylesheet" href="{% static 'css/mhav-v21p.css' %}">{% endblock %}
 {% block content %}
     <section class="page-intro">
         <div class="container">
@@ -17,6 +17,43 @@
     </section>
     <section class="section">
         <div class="container">
+            <div class="content-form mhav-my-applications">
+                <h2>Mijn cursusaanmeldingen</h2>
+                <p>Bekijk hier de voortgang van je aanmeldingen. Je inschrijving is pas definitief zodra deze is verwerkt.</p>
+                <div class="mhav-my-applications-grid">
+                {% for application in my_applications %}
+                    <article class="mhav-my-application">
+                        <div class="mhav-my-application-top"><strong>{{ application.dog_name }}</strong>
+                        {% if application.linked_enrollment_id %}<span class="mhav-application-state is-final">Definitief ingeschreven</span>
+                        {% elif application.status == 'rejected' %}<span class="mhav-application-state">Niet geplaatst</span>
+                        {% elif application.proposed_group_id %}<span class="mhav-application-state">In behandeling · voorlopige indeling</span>
+                        {% elif application.status == 'waiting' %}<span class="mhav-application-state">Wacht op indeling</span>
+                        {% elif application.status == 'review' %}<span class="mhav-application-state">In behandeling</span>
+                        {% else %}<span class="mhav-application-state">Ontvangen</span>{% endif %}</div>
+                        <p><strong>{{ application.course.title|default:'Cursus' }}</strong> · {{ application.season.name|default:'Seizoen nog niet bekend' }}</p>
+                        <p>Aangevraagd op {{ application.created_at|date:'d-m-Y' }}</p>
+                        {% if application.linked_enrollment_id %}
+                          {% with group=application.linked_enrollment.group %}
+                          <div class="mhav-my-assignment">
+                            <strong>Jouw lesgroep: {{ group.name }}</strong>
+                            {% with first_date=group.first_lesson_date %}
+                              {% if first_date %}
+                                <span><strong>Eerste training: {{ first_date|date:'l j F Y' }}</strong></span>
+                              {% else %}
+                                <span>Eerste lesdatum nog niet vastgesteld</span>
+                              {% endif %}
+                            {% endwith %}
+                            <span>{{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }}</span>
+                          </div>
+                          {% endwith %}
+                        {% elif application.proposed_group_id %}<p>Er is een voorlopige indeling. Je ontvangt de definitieve lesgroep na verwerking.</p>
+                        {% else %}<p>De cursusadministratie behandelt je aanvraag.</p>{% endif %}
+                    </article>
+                {% empty %}
+                    <p>Je hebt nog geen cursusaanmeldingen die aan dit account zijn gekoppeld.</p>
+                {% endfor %}
+                </div>
+            </div>
             <div class="content-form">
                 <h2>
                     Mijn account
@@ -48,6 +85,13 @@
                 <p>
                     <a class="text-link" href="{% url 'accounts:profile' %}">Profiel bewerken →</a>
                 </p>
+                {% if is_trainer %}
+                    <div class="mhav-flow-panel" style="margin-top: 1.5rem;">
+                        <h2>Mijn lesgroepen</h2>
+                        <p>Bekijk jouw toegewezen lesgroepen, registreer eindresultaten en sluit cursussen af.</p>
+                        <p><a class="text-link" href="{% url 'planning:execution_list' %}">Open mijn lesgroepen →</a></p>
+                    </div>
+                {% endif %}
                 {% if is_trainer %}
                     <div class="mhav-flow-panel" style="margin-top: 1.5rem;">
                         <h2>Mijn komende lesseizoenen</h2>
@@ -89,4 +133,5 @@
             </div>
         </div>
     </section>
+<section class="section"><div class="container" style="max-width:1000px"><h2>Mijn cursusgeschiedenis</h2>{% for enrollment in completed_enrollments %}<article style="padding:18px;margin:12px 0;background:#f5f8f5;border:1px solid #d7e3d7;border-radius:16px"><strong>{{ enrollment.group.course_title }} · {{ enrollment.group.season.name }}</strong><p>{{ enrollment.combination.dog.name }} · {{ enrollment.group.name }}</p><p>Eindresultaat: {{ enrollment.get_outcome_display }} · Afgesloten op {{ enrollment.group.execution_closed_at|date:'j F Y' }}</p></article>{% empty %}<p>Je hebt nog geen afgesloten cursussen.</p>{% endfor %}</div></section>
 {% endblock %}

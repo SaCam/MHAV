@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Definitief verwerken — controle | MHAV{% endblock %}
+{% block content %}
+<section class="section"><div class="container" style="max-width:960px">
+<a href="{% url 'planning:application_plan_review' %}?season={{ season.pk }}">← Terug naar planning</a>
+<h1>Definitief verwerken — controle</h1>
+<p><strong>{{ season.name }}</strong>{% if scope_group %} · {{ scope_group.name }}{% else %} · Hele seizoen{% endif %}</p>
+<p><strong>{{ ready }} gereed</strong> · <strong>{{ blocked }} vereisen aandacht</strong>. Bij verwerking worden accounts (zonder actief wachtwoord), honden, combinaties en definitieve inschrijvingen aangemaakt of hergebruikt. Er worden geen e-mails verzonden.</p>
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:12px">Aanvrager</th><th style="text-align:left;padding:12px">Hond</th><th style="text-align:left;padding:12px">Lesgroep</th><th style="text-align:left;padding:12px">Resultaat</th></tr></thead><tbody>
+{% for row in preview %}<tr style="border-top:1px solid #ddd"><td style="padding:12px">{{ row.app.first_name }} {{ row.app.last_name }}<small style="display:block">{{ row.app.email }}</small></td><td style="padding:12px">{{ row.app.dog_name }}</td><td style="padding:12px">{{ row.app.proposed_group.name }}</td><td style="padding:12px">{% if row.problem %}⚠ {{ row.problem }}{% else %}✓ Gereed{% endif %}</td></tr>{% empty %}<tr><td colspan="4">Geen openstaande conceptplaatsingen in deze selectie.</td></tr>{% endfor %}</tbody></table></div>
+{% if ready %}<form method="post" action="{% url 'planning:application_plan_action' %}" style="margin-top:24px">{% csrf_token %}<input type="hidden" name="action" value="finalize"><input type="hidden" name="season" value="{{ season.pk }}"><input type="hidden" name="group" value="{% if scope_group %}{{ scope_group.pk }}{% endif %}"><input type="hidden" name="confirm_finalization" value="yes"><button type="submit" class="button button-primary">Bevestigen: {{ ready }} inschrijving(en) verwerken</button></form>{% endif %}
+</div></section>
+{% endblock %}

@@ -1,0 +1,22 @@
+.mhav-admin-refresh{--mhav-green:#214c39;--mhav-line:#dce6d9;--mhav-cream:#f6f8f3;color:#253d30}
+.mhav-admin-panel{padding:clamp(1.1rem,2.5vw,1.65rem);border:1px solid var(--mhav-line);border-radius:18px;background:#fff;margin-bottom:2rem}
+.mhav-admin-panel h2,.mhav-admin-heading h2{font-size:1.35rem;margin:0 0 .85rem;color:var(--mhav-green)}
+.mhav-admin-actions,.mhav-filter-row,.mhav-app-actions{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center}
+.mhav-admin-actions .button,.mhav-app-actions .button{margin:0;white-space:normal;text-align:center}
+.mhav-admin-heading{margin:1.6rem 0 1rem}.mhav-admin-heading p{color:#617267;margin:0}
+.mhav-season-grid,.mhav-app-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:1rem}
+.mhav-season-card,.mhav-app-card{display:flex;flex-direction:column;gap:.75rem;background:#fff;border:1px solid var(--mhav-line);border-radius:18px;padding:1.35rem;text-decoration:none;color:inherit;box-shadow:0 4px 18px rgba(30,65,43,.045)}
+.mhav-season-card:hover{border-color:#7da38b;transform:translateY(-2px);transition:.15s}
+.mhav-card-top{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap}
+.mhav-status-chip{background:#e9f2e9;color:var(--mhav-green);border-radius:99px;padding:.35rem .7rem;font-size:.82rem;font-weight:750}
+.mhav-card-arrow{font-size:1.5rem;color:var(--mhav-green)}.mhav-season-card h3,.mhav-app-card h2{font-size:1.3rem;margin:0;color:var(--mhav-green)}
+.mhav-season-date{color:#637368;margin:0}.mhav-season-bottom{display:flex;gap:.45rem;align-items:baseline;border-top:1px solid var(--mhav-line);padding-top:1rem;margin-top:auto}
+.mhav-season-bottom strong{font-size:1.5rem}.mhav-open-link{margin-left:auto;font-weight:700;color:var(--mhav-green)}
+.mhav-filter-row{margin-bottom:1.25rem}.mhav-filter{border:1px solid var(--mhav-line);padding:.55rem .9rem;border-radius:99px;text-decoration:none;color:var(--mhav-green);background:white;font-weight:650}
+.mhav-filter.is-active{background:var(--mhav-green);color:white;border-color:var(--mhav-green)}
+.mhav-app-date{font-size:.82rem;color:#647469}.mhav-app-dog{margin:0;color:#53695a}
+.mhav-app-meta{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;background:var(--mhav-cream);padding:.85rem;border-radius:12px}.mhav-app-meta div{display:grid;gap:.2rem;min-width:0}.mhav-app-meta small{color:#65776a}.mhav-app-meta strong{overflow-wrap:anywhere}
+.mhav-app-note{background:#f5f4e9;padding:.7rem .85rem;border-radius:9px;margin:0;font-size:.88rem;color:#675e36}
+.mhav-app-capacity{display:grid;gap:.55rem}.mhav-app-capacity>strong{font-size:.9rem}.mhav-capacity-row{display:flex;justify-content:space-between;gap:.8rem;font-size:.86rem;border-bottom:1px solid var(--mhav-line);padding-bottom:.45rem}.mhav-capacity-row span:first-child{min-width:0}.mhav-capacity-row span:last-child{white-space:nowrap;font-weight:750}
+.mhav-capacity-free{color:#287244}.mhav-capacity-full{color:#a64c3d}.mhav-app-preference{font-size:.86rem;margin:0;color:#526456;overflow-wrap:anywhere}.mhav-app-actions{margin-top:auto;padding-top:.5rem}
+@media(max-width:600px){.mhav-app-meta{grid-template-columns:1fr}.mhav-app-actions .button{flex:1 1 auto}.mhav-season-card,.mhav-app-card{padding:1rem}}

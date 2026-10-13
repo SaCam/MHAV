@@ -19,7 +19,7 @@ class PublicApplicationTests(TestCase):
         self.data = {
             'first_name': 'Test', 'last_name': 'Cursist', 'email': 'test@example.org',
             'phone': '0612345678', 'street': 'Teststraat', 'house_number': '12',
-            'postal_code': '5555 AA', 'city': 'Valkenswaard', 'dog_name': 'Bello',
+            'postal_code': '5555 AA', 'city': 'Valkenswaard', 'country': 'NL', 'dog_name': 'Bello',
             'dog_breed': 'Kruising', 'course': str(self.course.pk),
             'privacy_agreement': 'on', 'season': str(self.offering.season_id),
         }
@@ -35,6 +35,22 @@ class PublicApplicationTests(TestCase):
         self.assertEqual(application.email, 'test@example.org')
         self.assertIsNotNone(application.privacy_accepted_at)
         self.assertIsNone(application.linked_enrollment)
+
+    def test_open_application_without_season(self):
+        data = {**self.data, 'season': ''}
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('website:application_thanks'))
+        application = CourseApplication.objects.get()
+        self.assertIsNone(application.season_id)
+        self.assertEqual(application.course_id, self.course.pk)
+
+    def test_open_application_when_registration_closed(self):
+        self.offering.registration_open = False
+        self.offering.save(update_fields=['registration_open'])
+        data = {**self.data, 'season': ''}
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('website:application_thanks'))
+        self.assertIsNone(CourseApplication.objects.get().season_id)
 
     def test_closed_offering_rejects_application(self):
         self.offering.registration_open = False
