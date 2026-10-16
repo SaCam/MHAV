@@ -136,7 +136,21 @@ class CourseApplicationForm(StyledForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.applicant_user = kwargs.pop('applicant_user', None)
         super().__init__(*args, **kwargs)
+        if self.applicant_user is not None and self.applicant_user.is_authenticated:
+            # Disabled Django fields always validate from initial values, not POST.
+            # This prevents forged requests from changing the applicant identity.
+            identity = {
+                'first_name': self.applicant_user.first_name,
+                'middle_name': '',
+                'last_name': self.applicant_user.last_name,
+                'email': self.applicant_user.email,
+            }
+            for name, value in identity.items():
+                self.fields[name].initial = value
+                self.initial[name] = value
+                self.fields[name].disabled = True
         from apps.website.models import SitePage
         from apps.website.views import TRAINING_SLUGS
         from .models import SeasonCourseOffering
@@ -158,6 +172,9 @@ class CourseApplicationForm(StyledForm):
 
     def clean(self):
         data = super().clean()
+        if self.applicant_user is not None and self.applicant_user.is_authenticated:
+            if not (self.applicant_user.first_name.strip() and self.applicant_user.last_name.strip() and self.applicant_user.email.strip()):
+                raise forms.ValidationError('Vul eerst je voornaam, achternaam en e-mailadres aan in je MHAV-account voordat je je aanmeldt.')
         season, course = data.get('season'), data.get('course')
         if season and course:
             from .models import SeasonCourseOffering

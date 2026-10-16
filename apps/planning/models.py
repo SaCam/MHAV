@@ -36,6 +36,7 @@ class Dog(models.Model):
     breed = models.CharField('Ras', max_length=120, blank=True)
     date_of_birth = models.DateField('Geboortedatum', blank=True, null=True)
     notes = models.TextField('Opmerkingen', blank=True)
+    photo = models.ImageField('Foto hond', upload_to='dogs/%Y/%m/', blank=True, null=True)
     class Meta:
         ordering = ('name', 'pk')
     def __str__(self): return self.name
@@ -168,7 +169,8 @@ class CourseApplication(models.Model):
         REVIEW = 'review', 'In behandeling'
         WAITING = 'waiting', 'Wacht op indeling'
         PROCESSED = 'processed', 'Verwerkt'
-        REJECTED = 'rejected', 'Afgewezen / ingetrokken'
+        REJECTED = 'rejected', 'Niet geplaatst / ingetrokken'
+        WAITLIST = 'waitlist', 'Wachtlijst'
 
     created_at = models.DateTimeField('Ontvangen op', auto_now_add=True)
     updated_at = models.DateTimeField('Bijgewerkt op', auto_now=True)
@@ -204,6 +206,7 @@ class CourseApplication(models.Model):
     remarks = models.TextField('Overige opmerkingen', blank=True)
     privacy_accepted_at = models.DateTimeField('Privacyverklaring akkoord op')
     admin_notes = models.TextField('Interne opmerkingen', blank=True)
+    dog_profile = models.ForeignKey(Dog, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_applications')
     linked_combination = models.ForeignKey(Combination, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_applications')
     linked_enrollment = models.ForeignKey(Enrollment, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_applications')
     class Outcome(models.TextChoices):
@@ -216,6 +219,10 @@ class CourseApplication(models.Model):
     capacity_override_at = models.DateTimeField(null=True, blank=True)
     placement_source = models.CharField('Herkomst conceptplaatsing', max_length=12, choices=[('legacy', 'Onbekend (bestaand)'), ('manual', 'Handmatig'), ('automatic', 'Automatisch')], default='legacy')
     proposed_group = models.ForeignKey(TrainingGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='proposed_applications', verbose_name='Voorlopige lesgroep')
+    closure_reason = models.CharField('Afhandelreden', max_length=24, blank=True, choices=[('capacity', 'Geen beschikbare plaats'), ('availability', 'Geen passend lesmoment'), ('withdrawn', 'Ingetrokken door aanvrager'), ('other', 'Overige reden')])
+    closure_note = models.TextField('Toelichting afhandeling', blank=True)
+    handled_at = models.DateTimeField('Afgehandeld op', null=True, blank=True)
+    handled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_mhav_applications')
 
     class Meta:
         ordering = ('-created_at',)
@@ -359,3 +366,25 @@ class SeasonCourseOffering(models.Model):
         if self.registration_closes_at and now >= self.registration_closes_at:
             return False
         return True
+
+
+class LessonRecord(models.Model):
+    class Attendance(models.TextChoices):
+        UNKNOWN = 'unknown', 'Nog niet ingevuld'
+        PRESENT = 'present', 'Aanwezig'
+        ABSENT = 'absent', 'Afwezig'
+        EXCUSED = 'excused', 'Afgemeld'
+    class Rating(models.TextChoices):
+        NONE = '', 'Niet beoordeeld'
+        ATTENTION = 'attention', 'Aandacht nodig'
+        GOOD = 'good', 'Goed'
+        EXCELLENT = 'excellent', 'Uitstekend'
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='lesson_records')
+    lesson_date = models.DateField('Lesdatum')
+    attendance = models.CharField('Aanwezigheid', max_length=10, choices=Attendance.choices, default=Attendance.UNKNOWN)
+    rating = models.CharField('Beoordeling', max_length=12, choices=Rating.choices, blank=True, default='')
+    notes = models.TextField('Lesnotities', blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=('enrollment', 'lesson_date'), name='unique_mhav_lesson_record')]
+        ordering = ('lesson_date', 'enrollment_id')

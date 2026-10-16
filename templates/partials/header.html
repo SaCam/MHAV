@@ -1,7 +1,18 @@
+{% load static %}
 <header class="site-header">
     <div class="container header-inner">
-        <a class="brand" href="{% url 'website:home' %}" aria-label="MHAV - naar startpagina"><span class="brand-mark" aria-hidden="true">✦</span><span><strong>Mijn Hond</strong><small>Als Vriend</small></span></a>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="Open navigatiemenu"><span></span><span></span><span></span></button>
+        <a class="brand" href="{% url 'website:home' %}" aria-label="MHAV - naar startpagina">
+            <img
+                src="{% static 'images/mhav-logo.png' %}"
+                alt=""
+                class="brand-logo"
+            >
+            <span>
+                <strong>Mijn Hond</strong>
+                <small>Als Vriend</small>
+            </span>
+        </a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="Open navigatiemenu"><span></span><span></span><span></span></button>
         <nav id="main-navigation" class="main-nav" aria-label="Hoofdnavigatie">
             <a href="{% url 'website:home' %}">Home</a>
         <a href="{% url 'content:list' %}">Nieuws</a>

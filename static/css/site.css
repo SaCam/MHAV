@@ -77,14 +77,6 @@ img {
     gap:28px
 }
 
-.brand {
-    display:flex;
-    align-items:center;
-    gap:10px;
-    color:var(--forest);
-    line-height:1.1
-}
-
 .brand-mark {
     display:grid;
     place-items:center;
@@ -801,3 +793,84 @@ img {
 .page-next-step{border-radius:25px}
 @media(prefers-reduced-motion:reduce){.button,.info-card,.main-nav a{transition:none}.button:hover,.info-card:hover{transform:none}}
 @media(max-width:800px){.hero-grid{padding-block:55px}.hero-visual{border-radius:140px 140px 22px 22px}.hero-sticker{left:0}}
+
+
+/* MHAV header logo */
+
+.site-header .header-inner {
+    min-height: 90px;
+    gap: 24px;
+}
+
+.site-header .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.site-header .brand-logo {
+    display: block;
+    width: 58px;
+    height: 58px;
+    max-width: 58px;
+    max-height: 58px;
+    object-fit: contain;
+    flex: 0 0 58px;
+}
+
+.site-header .brand > span {
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap;
+}
+
+.site-header .brand strong,
+.site-header .brand small {
+    display: block;
+    line-height: 1.2;
+}
+
+.site-header .main-nav {
+    gap: clamp(10px, 1.5vw, 25px);
+}
+
+.site-header .main-nav a {
+    white-space: nowrap;
+}
+
+@media (max-width: 1050px) {
+    .site-header .menu-toggle {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        background: transparent;
+        border: 0;
+        padding: 12px;
+        cursor: pointer;
+    }
+
+    .site-header .main-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        padding: 18px;
+        background: var(--paper);
+        box-shadow: 0 15px 30px #1b3d2a14;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+    }
+
+    .site-header .main-nav.is-open {
+        display: flex;
+    }
+
+    .site-header .main-nav a {
+        padding: 14px 10px;
+    }
+}

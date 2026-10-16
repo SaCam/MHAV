@@ -23,6 +23,9 @@ def _claim_pending_application(request):
     if application.user_id is None:
         CourseApplication.objects.filter(pk=application.pk, user__isnull=True).update(user=request.user)
     if application.user_id in (None, request.user.pk):
+        from .dog_profiles import ensure_application_dog
+        application.refresh_from_db()
+        ensure_application_dog(application)
         request.session.pop('mhav_pending_application_id', None)
 
 
@@ -47,6 +50,9 @@ def register(request):
                 for field in ('phone', 'street', 'house_number', 'postal_code', 'city'):
                     setattr(profile, field, getattr(pending, field, '') or '')
                 profile.save()
+                pending.refresh_from_db()
+                from .dog_profiles import ensure_application_dog
+                ensure_application_dog(pending)
         login(request, user)
         _claim_pending_application(request)
         return redirect("accounts:dashboard")
@@ -59,29 +65,43 @@ def dashboard(request):
     profile, _ = MemberProfile.objects.get_or_create(user=request.user)
     is_complete = all([request.user.first_name, request.user.last_name, request.user.email,
                        profile.phone, profile.street, profile.house_number, profile.postal_code, profile.city])
-    from apps.planning.models import Season, TrainerSeasonAvailability, CourseApplication, Enrollment
+    from apps.planning.models import Season, TrainerSeasonAvailability, CourseApplication, Enrollment, Combination
+    from apps.planning.views import trainer_availability_locked
 
     trainer_role = request.user.is_superuser or request.user.groups.filter(
         name="MHAV - Trainer"
     ).exists()
     upcoming_seasons = []
     if trainer_role:
-        seasons = Season.objects.filter(status=Season.Status.DRAFT).order_by("starts_on")
+        seasons = [season for season in Season.objects.filter(status=Season.Status.DRAFT).order_by("starts_on") if not trainer_availability_locked(season)]
         responses = {
             response.season_id: response
             for response in TrainerSeasonAvailability.objects.filter(trainer=request.user)
         }
         upcoming_seasons = [(season, responses.get(season.pk)) for season in seasons]
 
-    applications = CourseApplication.objects.filter(user=request.user).select_related(
-        'season', 'course', 'proposed_group', 'linked_enrollment__group'
-    ).order_by('-created_at')
+    applications = (CourseApplication.objects.filter(user=request.user)
+        .exclude(linked_enrollment__group__execution_status__in=['completed', 'cancelled'])
+        .select_related('season', 'course', 'proposed_group', 'linked_enrollment__group')
+        .order_by('-created_at'))
     completed_enrollments = Enrollment.objects.filter(
         combination__handler=request.user,
         group__execution_status='completed',
         status=Enrollment.Status.PLACED,
     ).select_related('group__season', 'combination__dog').order_by('-group__execution_closed_at')
+    from django.utils import timezone
+    today = timezone.localdate()
+    lessons = []
+    active_enrollments = Enrollment.objects.filter(combination__handler=request.user, status=Enrollment.Status.PLACED).exclude(group__execution_status__in=["completed", "cancelled"]).select_related("group__season", "group__trainer", "combination__dog")
+    for enrollment in active_enrollments:
+        group = enrollment.group
+        for day in group.scheduled_dates:
+            if day >= today:
+                lessons.append({"date": day, "group": group, "dog": enrollment.combination.dog, "trainer": group.trainer})
+    lessons.sort(key=lambda item: (item["date"], item["group"].starts_at, item["group"].pk))
     return render(request, "accounts/dashboard.html", {
+        "agenda_lessons": lessons,
+        "my_dogs": Combination.objects.filter(handler=request.user).select_related("dog").order_by("dog__name"),
         "completed_enrollments": completed_enrollments,
         "my_applications": applications,
         "profile": profile, "is_member": request.user.groups.filter(name='MHAV - Lid').exists(),
@@ -178,6 +198,7 @@ def beheer_users(request):
 
 @user_passes_test(_is_account_admin, login_url='accounts:login')
 def beheer_user_edit(request, user_id):
+    from apps.planning.models import TrainingGroup
     target = get_object_or_404(get_user_model(), pk=user_id)
     if target.is_superuser:
         messages.warning(request, 'Superuser-rechten kunnen hier niet worden aangepast.')
@@ -190,6 +211,10 @@ def beheer_user_edit(request, user_id):
             form.add_error('is_active', 'Je kunt je eigen account niet uitschakelen.')
         elif target.pk == request.user.pk and not form.cleaned_data['role_admin'] and not request.user.is_superuser:
             form.add_error('role_admin', 'Je kunt je eigen administratorrechten niet verwijderen.')
+        elif (target.groups.filter(name='MHAV - Trainer').exists()
+              and not form.cleaned_data['role_trainer']
+              and TrainingGroup.objects.filter(trainer=target, execution_status__in=['planned', 'active']).exists()):
+            form.add_error('role_trainer', 'Deze trainer is nog toegewezen aan geplande of lopende lesgroepen. Wijs eerst een andere trainer toe of sluit de groepen af.')
         elif get_user_model().objects.exclude(pk=target.pk).filter(email__iexact=form.cleaned_data['email']).exists():
             form.add_error('email', 'Dit e-mailadres is al in gebruik.')
         else:
@@ -254,3 +279,43 @@ def beheer_trainer_profile(request, user_id):
     return render(request, 'accounts/trainer_profile.html', {
         'form': form, 'visibility_form': visibility_form, 'trainer_profile': profile, 'target': target,
     })
+
+
+@login_required
+def dog_photo(request, dog_id):
+    from django.shortcuts import get_object_or_404
+    from apps.planning.models import Combination
+    from PIL import Image, UnidentifiedImageError
+    combination = get_object_or_404(Combination.objects.select_related('dog'), handler=request.user, dog_id=dog_id)
+    if request.method != 'POST':
+        return redirect('accounts:dashboard')
+    dog = combination.dog
+    if request.POST.get('remove_photo') == '1':
+        if dog.photo:
+            dog.photo.delete(save=False)
+        dog.photo = None
+        dog.save(update_fields=['photo'])
+        messages.success(request, 'Hondenfoto verwijderd.')
+        return redirect('accounts:dashboard')
+    upload = request.FILES.get('photo')
+    if not upload or upload.size > 222225 * 1024 * 1024:
+        messages.error(request, 'Kies een afbeelding van maximaal 25 MB.')
+        return redirect('accounts:dashboard')
+    try:
+        upload.seek(0)
+        with Image.open(upload) as image:
+            image.verify()
+        upload.seek(0)
+        with Image.open(upload) as image:
+            if image.format not in ('JPEG', 'PNG', 'WEBP') or image.width > 12000 or image.height > 12000:
+                raise ValueError('Unsupported image')
+        upload.seek(0)
+    except (UnidentifiedImageError, ValueError, OSError, Image.DecompressionBombError):
+        messages.error(request, 'Gebruik een geldige JPG-, PNG- of WEBP-afbeelding (max. 6000 pixels).')
+        return redirect('accounts:dashboard')
+    if dog.photo:
+        dog.photo.delete(save=False)
+    dog.photo = upload
+    dog.save(update_fields=['photo'])
+    messages.success(request, 'Hondenfoto opgeslagen.')
+    return redirect('accounts:dashboard')

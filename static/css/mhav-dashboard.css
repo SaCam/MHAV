@@ -1,0 +1,40 @@
+/* Mijn MHAV: consistent, scannable dashboard sections. */
+.mhav-dashboard{padding-block:40px 80px;background:#fafbf7}
+.mhav-dashboard-nav{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:24px}
+.mhav-dashboard-nav a{padding:10px 15px;border:1px solid #d5e2d7;border-radius:999px;background:#fff;color:#244d3a;font-size:13px;font-weight:700}
+.mhav-dashboard-nav a:hover,.mhav-dashboard-nav a:focus-visible{background:#e9efe5}
+.mhav-dashboard-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);gap:22px;align-items:start}
+.mhav-dashboard-panel{min-width:0;margin:0!important;padding:26px!important;border:1px solid #dce7da;border-radius:22px;background:white;box-shadow:0 7px 24px #173e2d0a}
+.mhav-dashboard-panel h2{font-size:clamp(21px,2vw,27px);margin:0 0 10px;color:#244d3a}
+.mhav-dashboard-panel>p{line-height:1.65}
+#mijn-agenda,#mijn-aanmeldingen,#trainer-tools,#mijn-geschiedenis{grid-column:1/-1}
+#mijn-honden,#mijn-account{grid-column:auto}
+.mhav-dashboard-panel .mhav-flow-panel{border:0;box-shadow:none;padding:0;background:transparent}
+.mhav-dashboard-panel input[type=file]{max-width:100%;margin:8px 0 12px}
+.mhav-dashboard-panel form{max-width:100%}
+.mhav-dashboard-panel .button{margin-top:6px}
+.mhav-dashboard-panel article{min-width:0}
+.mhav-dashboard-panel .mhav-my-applications-grid{margin-top:18px}
+@media(max-width:780px){.mhav-dashboard-layout{grid-template-columns:minmax(0,1fr)}#mijn-honden,#mijn-account{grid-column:1}.mhav-dashboard-panel{padding:20px!important}.mhav-dashboard{padding-block:24px 60px}}
+
+/* Dog images: show the whole photograph without distorting or cropping it. */
+.mhav-dashboard-panel .mhav-dog-photo,
+.mhav-dashboard-panel .mhav-dog-photo-placeholder {
+  display:block; width:100%; height:auto; aspect-ratio:4/3;
+  max-height:340px; border-radius:14px; background:#eef3ec;
+}
+.mhav-dashboard-panel .mhav-dog-photo { object-fit:contain; }
+.mhav-dashboard-panel .mhav-dog-photo-placeholder {
+  display:grid; place-items:center; font-size:48px;
+}
+#mijn-honden input[type=file] {
+  display:block; width:100%; font:inherit; font-size:13px;
+  padding:10px; border:1px solid #d5e2d7; border-radius:10px;
+  background:#f8faf7; box-sizing:border-box;
+}
+#mijn-honden input[type=file]::file-selector-button {
+  border:1px solid #c5d8c9; background:#eaf2e9; color:#244d3a;
+  padding:8px 12px; border-radius:8px; margin-right:10px; cursor:pointer;
+}
+#mijn-honden article form { margin-top:12px; }
+#mijn-honden article h3 { margin:14px 0 4px; }

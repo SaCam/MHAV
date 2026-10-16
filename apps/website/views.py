@@ -4,7 +4,7 @@ from .forms import ContactForm, HomePageEditForm, HomePhotoEditForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponseForbidden
 
 from apps.content.models import Announcement, NewsPost
@@ -45,16 +45,35 @@ def _section_page(request, page_key, edit_section=None, form=None):
     courses_qs = SitePage.objects.filter(is_published=True).filter(Q(slug__in=TRAINING_SLUGS) | Q(slug__startswith="cursus-")).exclude(slug="phv-knpv").order_by("menu_order", "title")
     published_groups = []
     if page_key == 'courses':
-        from apps.planning.models import TrainingGroup, Season
-        from django.db.models import Count
-        from apps.planning.models import SeasonCourseOffering
-        open_pairs = {(o.season_id, o.course_id) for o in SeasonCourseOffering.objects.select_related('season', 'course') if o.accepts_applications()}
-        published_groups = (TrainingGroup.objects.filter(
-            season_id__in=[s for s, c in open_pairs], course_id__in=[c for s, c in open_pairs], course__is_published=True,
-        ).select_related('course', 'season', 'trainer')
-         .annotate(placed_count=Count('enrollments', filter=Q(enrollments__status='placed')))
-         .order_by('season__starts_on', 'day', 'starts_at', 'name'))
-        published_groups = [g for g in published_groups if (g.season_id, g.course_id) in open_pairs]
+        from apps.planning.models import TrainingGroup, Season, SeasonCourseOffering
+
+        open_pairs = {
+            (o.season_id, o.course_id)
+            for o in SeasonCourseOffering.objects.select_related('season', 'course')
+            if o.accepts_applications()
+        }
+
+        published_groups = (
+            TrainingGroup.objects.filter(
+                season_id__in=[s for s, c in open_pairs],
+                course_id__in=[c for s, c in open_pairs],
+                course__is_published=True,
+            )
+            .exclude(execution_status='completed')
+            .select_related('course', 'season', 'trainer')
+            .annotate(
+                placed_count=Count(
+                    'enrollments',
+                    filter=Q(enrollments__status='placed')
+                )
+            )
+            .order_by('season__starts_on', 'day', 'starts_at', 'name')
+        )
+
+        published_groups = [
+            g for g in published_groups
+            if (g.season_id, g.course_id) in open_pairs
+        ]
     return render(request, "website/" + ("phv" if page_key == "phv" else "courses") + ".html", {
         "section": page_key, "copy": copy, "photo": photo, "published_groups": published_groups,
         "feature": SitePage.objects.filter(is_published=True, slug="phv-knpv").first() if page_key == "phv" else None,
@@ -137,19 +156,114 @@ def section_page_save(request, page_key):
     return _section_page(request, page_key, edit_section=section, form=form)
 
 
+# Simple on-page editing for the remaining public pages.
+PUBLIC_COPY = {
+    "instructors": {"hero_title": "Een goed team.", "hero_em": "Voor jou en je hond.", "hero_intro": "Onze instructeurs begeleiden de trainingen en delen hun kennis en enthousiasme met de vereniging.", "list_title": "Onze instructeurs."},
+    "general": {"hero_title": "Meer dan", "hero_em": "een hondenschool.", "hero_intro": "MHAV is een plek waar mensen en honden samen leren, trainen en plezier maken.", "intro_title": "Een vereniging met aandacht voor de band tussen mens en hond.", "intro_p1": "Bij MHAV staat samen trainen centraal. We geloven dat vertrouwen, duidelijke communicatie en plezier de basis vormen voor een prettige samenwerking.", "intro_p2": "Op deze pagina vind je meer over de vereniging en de praktische afspraken.", "list_title": "Alles over MHAV.", "cta_title": "Een vraag over onze vereniging?", "cta_text": "Neem contact op met MHAV voor meer informatie."},
+    "contact": {"hero_title": "Contact", "hero_intro": "Wil je meer weten over MHAV of onze trainingen? We horen graag van je.", "intro_title": "Neem contact op", "form_title": "Stuur ons een bericht", "form_intro": "Vul het formulier in. Je bericht wordt opgeslagen voor de beheerders van MHAV."},
+}
+
+def _public_editor(request, key):
+    from django import forms
+    can_text = request.user.is_authenticated and request.user.has_perm("website.change_sectionpagecontent")
+    can_photo = request.user.is_authenticated and request.user.has_perm("website.change_websiteimage")
+    entry = SectionPageContent.objects.filter(key=key).first()
+    copy = {**PUBLIC_COPY[key], **(entry.content if entry else {})}
+    edit = request.GET.get("edit")
+    sections = {"instructors": {"hero": ("hero_title", "hero_em", "hero_intro"), "list": ("list_title",)},
+                "general": {"hero": ("hero_title", "hero_em", "hero_intro"), "intro": ("intro_title", "intro_p1", "intro_p2"), "list": ("list_title",), "cta": ("cta_title", "cta_text")},
+                "contact": {"hero": ("hero_title", "hero_intro"), "intro": ("intro_title",), "form": ("form_title", "form_intro")}}[key]
+    if edit not in sections or not can_text: edit = None
+    class CopyForm(forms.Form):
+        def __init__(self, *args, section, **kwargs):
+            super().__init__(*args, **kwargs)
+            for field in sections[section]:
+                self.fields[field] = forms.CharField(label=field.replace("_", " ").capitalize(), max_length=2000,
+                    initial=copy[field], widget=forms.Textarea(attrs={"rows": 3}) if field.endswith(("intro", "p1", "p2", "text")) else forms.TextInput())
+    section_form = CopyForm(section=edit) if edit else None
+    return {"copy": copy, "edit_section": edit, "section_form": section_form,
+            "can_text": can_text, "can_photo": can_photo, "can_edit_hero": can_text or can_photo,
+            "can_instructors": request.user.is_authenticated and request.user.has_perm("website.change_instructor"),
+            "public_sections": sections}
+
+@login_required
+def public_page_save(request, page_key):
+    from django import forms
+    from django.http import HttpResponseBadRequest
+    from django.urls import reverse
+    if request.method != "POST" or page_key not in PUBLIC_COPY:
+        return HttpResponseBadRequest("Ongeldige aanvraag")
+    section = request.POST.get("section")
+    allowed = {"instructors": {"hero": ("hero_title", "hero_em", "hero_intro"), "list": ("list_title",)},
+               "general": {"hero": ("hero_title", "hero_em", "hero_intro"), "intro": ("intro_title", "intro_p1", "intro_p2"), "list": ("list_title",), "cta": ("cta_title", "cta_text")},
+               "contact": {"hero": ("hero_title", "hero_intro"), "intro": ("intro_title",), "form": ("form_title", "form_intro")}}[page_key]
+    target = reverse("website:" + page_key)
+    if section not in allowed:
+        return HttpResponseBadRequest("Ongeldig onderdeel")
+    if not request.user.has_perm("website.change_sectionpagecontent"):
+        return HttpResponseForbidden("Geen toestemming")
+
+    values = {}
+    for field in allowed[section]:
+        value = request.POST.get(field, "").strip()
+        if not value or len(value) > 2000:
+            messages.error(request, "Vul alle tekstvelden correct in.")
+            return redirect(target + "?edit=" + section + "#hero" if section == "hero" else target + "?edit=" + section)
+        values[field] = value
+
+    is_photo_section = section == "hero" and page_key in ("general", "contact")
+    if is_photo_section and "image" in request.FILES and not request.user.has_perm("website.change_websiteimage"):
+        return HttpResponseForbidden("Geen toestemming om foto's te bewerken")
+
+    class PhotoUploadForm(forms.Form):
+        image = forms.ImageField(required=False)
+
+    upload_form = PhotoUploadForm(request.POST, request.FILES) if is_photo_section else None
+    image = None
+    if upload_form is not None:
+        if not upload_form.is_valid():
+            messages.error(request, "De foto kon niet worden gelezen. Gebruik een geldige JPG, PNG of WebP afbeelding.")
+            return redirect(target + "?edit=hero#hero")
+        image = upload_form.cleaned_data["image"]
+        if image:
+            if image.size > 25 * 1024 * 1024 or image.content_type not in ("image/jpeg", "image/png", "image/webp"):
+                messages.error(request, "Gebruik een JPG, PNG of WebP afbeelding van maximaal 25 MB.")
+                return redirect(target + "?edit=hero#hero")
+            if not request.user.has_perm("website.change_websiteimage"):
+                return HttpResponseForbidden("Geen toestemming om foto's te bewerken")
+
+    try:
+        with transaction.atomic():
+            # Store the image first; if storage raises an error, don't claim the page was saved.
+            if image:
+                photo, _ = WebsiteImage.objects.get_or_create(
+                    key=page_key + "-hero", defaults={"title": page_key + " hero"})
+                photo.image = image
+                photo.save()
+            entry, _ = SectionPageContent.objects.get_or_create(key=page_key)
+            entry.content = {**entry.content, **values}
+            entry.save(update_fields=["content"])
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Unable to save public page %s section %s", page_key, section)
+        messages.error(request, "Opslaan is mislukt. Controleer de media-opslag en probeer opnieuw.")
+        return redirect(target + "?edit=" + section + "#hero" if section == "hero" else target + "?edit=" + section)
+    messages.success(request, "Tekst en foto opgeslagen." if image else "Onderdeel opgeslagen.")
+    return redirect(target + "#" + section)
+
+
 def instructors(request):
-    return render(request, "website/instructors.html", {
-        "instructors": Instructor.objects.filter(is_visible=True).filter(Q(user__isnull=True) | Q(user__is_active=True, user__groups__name="MHAV - Trainer")).distinct(),
-    })
+    ctx = _public_editor(request, "instructors")
+    ctx["instructors"] = Instructor.objects.filter(is_visible=True).filter(Q(user__isnull=True) | Q(user__is_active=True, user__groups__name="MHAV - Trainer")).distinct()
+    return render(request, "website/instructors.html", ctx)
 
 
 def general(request):
-    return render(request, "website/general.html", {
-        "section": "general", "title": "Algemeen", "eyebrow": "OVER ONZE VERENIGING",
-        "lead": "Alles over MHAV, onze vereniging en praktische zaken.",
+    ctx = _public_editor(request, "general")
+    ctx.update({"section": "general", "title": "Algemeen", "eyebrow": "OVER ONZE VERENIGING",
         "photo": WebsiteImage.objects.filter(key="general-hero").first(),
-        "pages": SitePage.objects.filter(is_published=True, slug__in=CLUB_SLUGS + ("inschrijven", "afmelden", "privacy")),
-    })
+        "pages": SitePage.objects.filter(is_published=True, slug__in=CLUB_SLUGS + ("inschrijven", "afmelden", "privacy"))})
+    return render(request, "website/general.html", ctx)
 
 
 @require_http_methods(["GET", "POST"])
@@ -157,18 +271,13 @@ def contact(request):
     form = ContactForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         if not form.cleaned_data["website"]:
-            ContactMessage.objects.create(
-                name=form.cleaned_data["name"],
-                email=form.cleaned_data["email"],
-                subject=form.cleaned_data["subject"],
-                message=form.cleaned_data["message"],
-            )
+            ContactMessage.objects.create(name=form.cleaned_data["name"], email=form.cleaned_data["email"],
+                subject=form.cleaned_data["subject"], message=form.cleaned_data["message"])
         return redirect("website:contact_thanks")
-    return render(request, "website/contact.html", {
-        "page": SitePage.objects.filter(slug="contact", is_published=True).first(),
-        "photo": WebsiteImage.objects.filter(key="contact-hero").first(),
-        "form": form,
-    })
+    ctx = _public_editor(request, "contact")
+    ctx.update({"page": SitePage.objects.filter(slug="contact", is_published=True).first(),
+        "photo": WebsiteImage.objects.filter(key="contact-hero").first(), "form": form})
+    return render(request, "website/contact.html", ctx)
 
 
 def contact_thanks(request):

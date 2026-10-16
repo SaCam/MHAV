@@ -4,7 +4,8 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-v21o.css' %}?v=21o1">
 <link rel="stylesheet" href="{% static 'css/mhav-beheer.css' %}">
 <link rel="stylesheet" href="{% static 'css/mhav-v21e.css' %}">
-<link rel="stylesheet" href="{% static 'css/mhav-v21f.css' %}">{% endblock %}
+<link rel="stylesheet" href="{% static 'css/mhav-v21f.css' %}">
+<link rel="stylesheet" href="{% static 'css/mhav-planning-clarity.css' %}">{% endblock %}
 {% block content %}
 <section class="page-intro">
   <div class="container"><a href="{% url 'planning:overview' %}">← Cursusadministratie</a>
@@ -19,6 +20,13 @@
       <a class="button button-primary" href="{% url 'planning:application_plan_review' %}">Gefaseerd automatisch plannen</a>
       <a class="button button-outline" href="{% url 'planning:application_plan_review' %}">Controleer conceptplanning ({{ draft_count }})</a>
     </div>
+    {% for review in season_reviews %}
+    <div class="mhav-admin-panel" style="margin:1rem 0;padding:1.25rem;border-left:4px solid #bd8425">
+      <strong>⚠ {{ review.count }} aanmelding{{ review.count|pluralize:"en" }} zonder definitieve plaats · {{ review.season.name }}</strong>
+      <p>Alle lesgroepen zijn goedgekeurd en de conceptplaatsingen zijn verwerkt. Beoordeel de resterende aanmeldingen vóór de trainingen starten. Er wordt niets automatisch afgewezen.</p>
+      <a class="button button-outline" href="{% url 'planning:application_list' %}?season={{ review.season.pk }}&amp;status=unplanned">Bekijk niet-geplaatste aanmeldingen →</a>
+    </div>
+    {% endfor %}
     <form method="get" action="{% url 'planning:application_list' %}" class="mhav-application-filters">
       <div class="mhav-application-filter-grid">
         <label>Status
@@ -58,7 +66,7 @@
     </form>
     <div class="mhav-app-grid">{% for item in applications %}
       <article class="mhav-app-card{% if item.linked_enrollment_id %} mhav-final-card{% endif %}">
-        <div class="mhav-card-top"><span class="mhav-status-chip">{% if item.linked_enrollment_id %}✓ Definitief ingeschreven{% else %}{{ item.planning_state }} · {{ item.get_status_display }}{% endif %}</span><span
+        <div class="mhav-card-top"><span class="mhav-status-chip">{% if item.linked_enrollment_id %}✓ Definitief ingeschreven{% elif item.status == 'rejected' %}Afgesloten · {{ item.get_closure_reason_display }}{% elif item.status == 'waitlist' %}Wachtlijst{% else %}{{ item.planning_state }} · {{ item.get_status_display }}{% endif %}</span><span
             class="mhav-app-date">{{ item.created_at|date:'d M Y · H:i' }}</span></div>
         <h2>{{ item.first_name }} &nbsp; {% if item.middle_name %} {{ item.middle_name }} &nbsp; {% endif %} {{ item.last_name }}</h2>
         <p class="mhav-app-dog">🐾 {{ item.dog_name }}{% if item.dog_breed %} · {{ item.dog_breed }}{% endif %}</p>
@@ -76,18 +84,25 @@
         </div>
         <div class="mhav-app-actions"><a class="button button-outline" href="{% url 'planning:application_detail' item.pk %}">Inschrijving bekijken →</a>{% if item.email %}<a class="button button-outline" href="mailto:{{ item.email }}">E-mail</a>{% endif %}</div>
         {% else %}
+        {% if item.status == 'rejected' or item.status == 'waitlist' %}
+          <p class="mhav-app-note"><strong>Besluit:</strong> {{ item.get_status_display }}{% if item.closure_reason %} · {{ item.get_closure_reason_display }}{% endif %}{% if item.handled_at %} · {{ item.handled_at|date:'d-m-Y' }}{% endif %}</p>
+          {% if item.closure_note %}<p class="mhav-app-note"><strong>Interne toelichting:</strong> {{ item.closure_note }}</p>{% endif %}
+          <form method="post" action="{% url 'planning:application_handle' item.pk %}">{% csrf_token %}<input type="hidden" name="decision" value="reopen"><button type="submit" class="button button-outline">Aanmelding heropenen</button></form>
+        {% else %}
         {% if item.open_application %}<p class="mhav-app-note">Nog niet gekoppeld aan een seizoen of lesgroep.</p>
         {% elif item.group_options %}
-        <div class="mhav-app-capacity"><strong>Lesmomenten & beschikbare plaatsen</strong>
-          {% for option in item.group_options %}<div class="mhav-capacity-row"><span>{{ option.group.get_day_display }}
-              {{ option.group.starts_at|time:'H:i' }} · {{ option.group.name }}{% if option.preference == 'preferred' %}
-              ★ Voorkeur{% elif option.preference == 'unavailable' %} · Kan niet{% elif option.preference == 'ok' %} ·
-              Kan wel{% endif %}</span><span
-              class="{% if option.available %}mhav-capacity-free{% else %}mhav-capacity-full{% endif %}">
-              {% if option.available %}{{ option.free }} vrij{% else %}Vol{% endif %}</span></div>{% endfor %}
+        <div class="mhav-app-capacity"><strong>Lesmomenten · definitief en concept</strong>
+          {% for option in item.group_options %}
+          <div class="mhav-capacity-row mhav-capacity-expanded">
+            <div><strong>{{ option.group.get_day_display }} {{ option.group.starts_at|time:'H:i' }}</strong> · {{ option.group.name }}
+              {% if option.preference == 'preferred' %}<span class="mhav-preference-tag">★ Voorkeur</span>{% elif option.preference == 'unavailable' %}<span class="mhav-preference-tag">Niet beschikbaar</span>{% elif option.preference == 'ok' %}<span class="mhav-preference-tag">Beschikbaar</span>{% endif %}
+              {% if item.proposed_group_id == option.group.pk %}<div class="mhav-current-placement">✓ Deze aanvraag staat hier in concept</div>{% endif %}
+              <div class="mhav-capacity-breakdown">{{ option.definitive }} definitief · {{ option.concept }} concept · capaciteit {{ option.capacity }}</div>
+            </div>
+            <strong class="{% if option.available %}mhav-capacity-free{% else %}mhav-capacity-full{% endif %}">{% if option.available %}{{ option.free }} vrij na concept{% else %}Geen vrije plaatsen{% endif %}</strong>
+          </div>{% endfor %}
         </div>
-        {% if item.has_preference %}<p class="mhav-app-note">{% if item.preferred_available %}✓ Voorkeurstijd heeft nog
-          plaats{% else %}⚠ Voorkeurstijd momenteel vol{% endif %}</p>{% endif %}
+        {% if item.has_preference %}<p class="mhav-app-note">{% if item.preferred_available %}✓ Op de voorkeurstijd is nog ruimte na conceptplanning{% elif item.proposed_group and item.proposed_group.pk %}Bekijk de conceptindeling hieronder; vrije plaatsen zijn exclusief conceptreserveringen.{% else %}⚠ Op de voorkeurstijd is geen vrije ruimte na conceptplanning{% endif %}</p>{% endif %}
         {% else %}<p class="mhav-app-note">Geen lesgroepen beschikbaar voor dit seizoen en deze cursus.</p>{% endif %}
         {% if item.availability %}<p class="mhav-app-preference"><strong>Opgegeven beschikbaarheid:</strong> {{ item.availability|truncatechars:145 }}</p>{% endif %}
         {% if item.proposed_group %}
@@ -97,6 +112,18 @@
             href="{% url 'planning:application_detail' item.pk %}">Handmatig plannen / beoordelen →</a>{% if item.email %}<a
             class="button button-outline" href="mailto:{{ item.email }}">E-mail</a>{% endif %}{% if item.phone %}<a
             class="button button-outline" href="tel:{{ item.phone }}">Bellen</a>{% endif %}</div>
+        <details class="mhav-admin-panel" style="margin-top:1rem;padding:1rem">
+          <summary style="cursor:pointer;font-weight:700">Aanmelding afhandelen / wachtlijst</summary>
+          <form method="post" action="{% url 'planning:application_handle' item.pk %}" style="display:grid;gap:.75rem;margin-top:1rem">{% csrf_token %}
+            <label>Reden bij afsluiten
+              <select name="reason"><option value="">Selecteer een reden</option><option value="capacity">Geen beschikbare plaats</option><option value="availability">Geen passend lesmoment</option><option value="withdrawn">Ingetrokken door aanvrager</option><option value="other">Overige reden</option></select>
+            </label>
+            <label>Interne toelichting (optioneel)<textarea name="note" rows="2" maxlength="4000"></textarea></label>
+            <p>Afsluiten geeft de conceptplaats vrij. Er wordt geen e-mail verstuurd.</p>
+            <div class="mhav-app-actions"><button class="button button-outline" type="submit" name="decision" value="waitlist">Op wachtlijst plaatsen</button><button class="button button-primary" type="submit" name="decision" value="close" onclick="return confirm('Deze aanmelding afsluiten?')">Aanmelding afsluiten</button></div>
+          </form>
+        </details>
+        {% endif %}
         {% endif %}
       </article>
       {% empty %}<div class="mhav-admin-panel">

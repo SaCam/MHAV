@@ -3,7 +3,7 @@
     Aanmelding {{ application.pk }} | MHAV
 {% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="/static/css/mhav-beheer.css"><link rel="stylesheet" href="/static/css/mhav-registration.css">
+    <link rel="stylesheet" href="/static/css/mhav-beheer.css"><link rel="stylesheet" href="/static/css/mhav-registration.css"><link rel="stylesheet" href="/static/css/mhav-planning-clarity.css">
 {% endblock %}
 {% block content %}
     <section class="page-intro">
@@ -20,50 +20,28 @@
     <section class="section">
         <div class="container mhav-registration-wrap">
             <div class="mhav-registration">
-                <h2>
-                    Contactgegevens
-                </h2>
-                <p>
-                    {{ application.email }} · {{ application.phone }}
-                </p>
-                <p>
-                    {{ application.street }} {{ application.house_number }}, {{ application.postal_code }} {{ application.city }}
-                </p>
-                <h2>
-                    Hond
-                </h2>
-                <p>
-                    {{ application.dog_name }} · {{ application.dog_breed }} · {{ application.get_dog_sex_display|default:'Geslacht niet ingevuld' }}
-                </p>
-                <p>
-                    Geboortedatum: {{ application.dog_birth_date|date:'d-m-Y'|default:'Niet ingevuld' }}
-                </p>
-                <p>
-                    <strong>Bijzonderheden:</strong> {{ application.dog_notes|default:'Geen'|linebreaksbr }}
-                </p>
-                <h2>
-                    Cursuswensen
-                </h2>
-                <p>
-                    <strong>Cursus:</strong> {{ application.course.title|default:'Niet beschikbaar' }}
-                </p>
-                <p>
-                    <strong>Seizoen:</strong> {{ application.season.name|default:'Geen voorkeur' }}
-                </p>
-                <p>
-                    <strong>Ervaring:</strong> {{ application.experience|default:'Niet opgegeven'|linebreaksbr }}
-                </p>
-                <p>
-                    <strong>Beschikbaarheid:</strong> {{ application.availability|default:'Niet opgegeven'|linebreaksbr }}
-                </p>
-                <p>
-                    <strong>Opmerkingen:</strong> {{ application.remarks|default:'Geen'|linebreaksbr }}
-                </p>
-                <p>
-                    <small>Privacyakkoord: {{ application.privacy_accepted_at|date:'d-m-Y H:i' }}</small>
-                </p>
+                <div class="mhav-review-section mhav-review-highlight">
+                  <span class="mhav-review-eyebrow">Aanmelding #{{ application.pk }} · {{ application.get_status_display }}</span>
+                  <h2>{{ application.first_name }} {{ application.last_name }} · {{ application.dog_name }}</h2>
+                  <p><strong>{{ application.course.title|default:'Geen cursus' }}</strong> · {{ application.season.name|default:'Open aanmelding' }}</p>
+                  <p>{% if application.proposed_group %}<strong>Huidige conceptplaatsing:</strong> {{ application.proposed_group.name }} · {{ application.proposed_group.get_day_display }} {{ application.proposed_group.starts_at|time:'H:i' }}{% else %}Nog geen conceptplaatsing{% endif %}</p>
+                </div>
+                <div class="mhav-review-section">
+                  <h2>1. Cursuswensen en beschikbaarheid</h2>
+                  <p><strong>Aangevraagde cursus:</strong> {{ application.course.title|default:'Niet beschikbaar' }} · <strong>Seizoen:</strong> {{ application.season.name|default:'Geen voorkeur' }}</p>
+                  <p><strong>Opgegeven beschikbaarheid:</strong> {{ application.availability|default:'Niet opgegeven'|linebreaksbr }}</p>
+                  {% if time_preference_rows %}
+                  <div class="mhav-preference-list">
+                    {% for row in time_preference_rows %}
+                    <div class="mhav-preference-item"><span>{{ row.group.get_day_display }} {{ row.group.starts_at|time:'H:i' }} · {{ row.group.name }}</span>
+                    <strong>{% if row.preference == 'preferred' %}★ Voorkeur{% elif row.preference == 'ok' %}Kan wel{% elif row.preference == 'unavailable' %}Kan niet{% else %}Niet opgegeven{% endif %}</strong></div>
+                    {% endfor %}
+                  </div>{% else %}<p>Er zijn momenteel geen lesgroepen om beschikbaarheid per lesmoment te tonen.</p>{% endif %}
+                  <p><strong>Ervaring:</strong> {{ application.experience|default:'Niet opgegeven'|linebreaksbr }}</p>
+                  <p><strong>Opmerkingen:</strong> {{ application.remarks|default:'Geen'|linebreaksbr }}</p>
+                </div>
                 <div class="mhav-plan-detail">
-                  <h2>Lesgroep plannen</h2>
+                  <h2>2. Voorlopige lesgroep kiezen</h2>
                   <p>Een conceptplaatsing is nog niet verwerkt. Alleen door de aanvrager opgegeven beschikbare tijden zijn selecteerbaar.</p>
                   {% if application.linked_enrollment_id %}
                     <p><strong>Verwerkt:</strong> {{ application.linked_enrollment.group.name }}</p>
@@ -80,7 +58,7 @@
                       <label class="mhav-capacity-exception"><input type="checkbox" name="capacity_override" value="yes"> Sta plaatsing boven de groepscapaciteit toe (alleen beheerder; wordt geregistreerd)</label><button class="button button-primary" type="submit">Conceptplaatsing opslaan</button>
                     </form>
                     {% if not eligible_groups %}<p>Geen beschikbare, niet-vergrendelde lesgroepen voor deze cursus gevonden.</p>{% endif %}
-                    <h3>Geleider-hondcombinatie</h3>
+                    <h3>3. Geleider-hondcombinatie</h3>
                     <p>{% if application.linked_combination %}Gekoppeld: {{ application.linked_combination }}{% else %}Nog niet gekoppeld. Maak indien nodig eerst een combinatie aan via Cursusadministratie.{% endif %}</p>
                     <form method="post" action="{% url 'planning:application_link_combination' application.pk %}">
                       {% csrf_token %}
@@ -96,9 +74,15 @@
                     {% endif %}
                   {% endif %}
                 </div>
-                <h2>
-                    Beheer
-                </h2>
+                <details class="mhav-review-section mhav-review-details"><summary>Contactgegevens en hondgegevens bekijken</summary>
+                  <p><strong>Contact:</strong> {{ application.email }} · {{ application.phone }}</p>
+                  <p>{{ application.street }} {{ application.house_number }}, {{ application.postal_code }} {{ application.city }}</p>
+                  <p><strong>Hond:</strong> {{ application.dog_name }} · {{ application.dog_breed }} · {{ application.get_dog_sex_display|default:'Geslacht niet ingevuld' }}</p>
+                  <p><strong>Geboortedatum:</strong> {{ application.dog_birth_date|date:'d-m-Y'|default:'Niet ingevuld' }}</p>
+                  <p><strong>Bijzonderheden:</strong> {{ application.dog_notes|default:'Geen'|linebreaksbr }}</p>
+                  <p><small>Privacyakkoord: {{ application.privacy_accepted_at|date:'d-m-Y H:i' }}</small></p>
+                </details>
+                <h2>4. Beheer</h2>
                 <form method="post">
                     {% csrf_token %}
                     {{ form.as_p }}<button class="button button-primary" type="submit">Wijzigingen opslaan</button>

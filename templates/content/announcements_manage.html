@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Mededelingen beheren | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-beheer.css' %}"><link rel="stylesheet" href="{% static 'css/mhav-v21e.css' %}">{% endblock %}
+{% block content %}
+<section class="page-intro"><div class="container"><a href="{% url 'accounts:beheer' %}">← Beheer</a><h1>Mededelingen beheren</h1><p>Publiceer belangrijke berichten voor bezoekers van MHAV.</p></div></section>
+<section class="section"><div class="container mhav-admin-refresh">
+<div class="mhav-admin-panel"><h2>Mededelingen</h2><div class="mhav-admin-actions"><a class="button button-primary" href="{% url 'content:announcement_new' %}">+ Nieuwe mededeling</a><a class="button button-outline" href="{% url 'accounts:beheer' %}">Terug naar beheer</a></div></div>
+<div class="mhav-admin-heading"><h2>Overzicht</h2><p>Wijzig, publiceer of beëindig een mededeling.</p></div>
+<div class="mhav-season-grid">{% for item in announcements %}
+<article class="mhav-season-card"><div class="mhav-card-top"><span class="mhav-status-chip">{% if item.is_published %}Gepubliceerd{% else %}Concept{% endif %} · {{ item.get_priority_display }}</span></div><h3>{{ item.title }}</h3><p class="mhav-season-date">Vanaf {{ item.published_at|date:'d-m-Y H:i' }}{% if item.expires_at %} · Tot {{ item.expires_at|date:'d-m-Y H:i' }}{% endif %}</p><p>{{ item.body|truncatechars:160 }}</p><div class="mhav-season-bottom"><a class="mhav-open-link" href="{% url 'content:announcement_edit' item.pk %}">Bewerken →</a></div></article>
+{% empty %}<div class="mhav-admin-panel"><p>Er zijn nog geen mededelingen.</p></div>{% endfor %}</div>
+</div></section>{% endblock %}

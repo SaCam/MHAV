@@ -6,7 +6,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import TrainingGroup, Enrollment, Season
+from .models import TrainingGroup, Enrollment, Season, LessonRecord
 
 
 def _admin(user):
@@ -42,7 +42,10 @@ def execution_detail(request, pk):
     group = get_object_or_404(TrainingGroup.objects.select_related('season','course','trainer'), pk=pk)
     _allowed(request.user, group)
     enrollments = list(group.enrollments.filter(status=Enrollment.Status.PLACED).select_related('combination__handler','combination__dog').order_by('created_at','pk'))
-    return render(request, 'planning/execution_detail.html', {'group':group,'enrollments':enrollments, 'dates':group.scheduled_dates, 'pending_count':sum(e.outcome==Enrollment.Outcome.PENDING for e in enrollments), 'is_admin':_admin(request.user)})
+    dates = group.scheduled_dates
+    records = {(r.enrollment_id, r.lesson_date): r for r in LessonRecord.objects.filter(enrollment__in=enrollments)}
+    lessons = [{'date': day, 'participants': [{'enrollment': e, 'record': records.get((e.pk, day))} for e in enrollments]} for day in dates]
+    return render(request, 'planning/execution_detail.html', {'group':group, 'enrollments':enrollments, 'lessons':lessons, 'dates':dates, 'pending_count':sum(e.outcome==Enrollment.Outcome.PENDING for e in enrollments), 'is_admin':_admin(request.user), 'attendance_choices':LessonRecord.Attendance.choices, 'rating_choices':LessonRecord.Rating.choices})
 
 
 @login_required
@@ -61,6 +64,21 @@ def execution_action(request, pk):
                 group.execution_started_at=timezone.now()
                 group.save(update_fields=['execution_status','execution_started_at'])
                 messages.success(request, 'Cursus is gestart.')
+        elif action == 'lesson':
+            if group.execution_status != 'active':
+                messages.error(request, 'Lesregistratie kan alleen tijdens een actieve cursus worden gewijzigd.')
+            else:
+                enrollment = get_object_or_404(placed.select_for_update(), pk=request.POST.get('enrollment_id'))
+                date_str = request.POST.get('lesson_date', '')
+                allowed_dates = {day.isoformat() for day in group.scheduled_dates}
+                attendance = request.POST.get('attendance', '')
+                rating = request.POST.get('rating', '')
+                notes = request.POST.get('notes', '').strip()
+                if date_str not in allowed_dates or attendance not in dict(LessonRecord.Attendance.choices) or rating not in dict(LessonRecord.Rating.choices) or len(notes) > 2000:
+                    messages.error(request, 'Ongeldige lesregistratie.')
+                else:
+                    LessonRecord.objects.update_or_create(enrollment=enrollment, lesson_date=date_str, defaults={'attendance':attendance, 'rating':rating, 'notes':notes})
+                    messages.success(request, 'Lesregistratie opgeslagen.')
         elif action == 'outcome':
             if group.execution_status != 'active':
                 messages.error(request, 'Eindresultaten kunnen alleen tijdens een actieve cursus worden gewijzigd.')

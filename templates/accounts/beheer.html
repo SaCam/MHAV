@@ -24,6 +24,7 @@
                     <a class="mhav-manage-card" href="{% url 'planning:execution_list' %}"><span class="mhav-manage-icon">✓</span><h2>Cursusuitvoering</h2><p>Bekijk jouw lesgroepen, registreer eindresultaten en sluit cursussen af.</p><strong>Open cursusuitvoering →</strong></a>
                 {% endif %}
                 {% if can_manage_users %}
+                    <a class="mhav-manage-card" href="{% url 'content:announcements_manage' %}"><span class="mhav-manage-icon">♧</span><h2>Mededelingen</h2><p>Publiceer belangrijke berichten voor alle bezoekers.</p><strong>Beheer mededelingen →</strong></a>
                     <a class="mhav-manage-card" href="{% url 'planning:overview' %}"><span class="mhav-manage-icon">▦</span>
                     <h2>
                         Cursusadministratie

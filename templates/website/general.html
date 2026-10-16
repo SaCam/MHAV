@@ -6,18 +6,26 @@
     <section class="editorial-hero editorial-hero--cream">
         <div class="container editorial-hero__grid">
             <div class="editorial-hero__copy">
+{% if can_text and edit_section != "hero" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=hero#hero">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "hero" %}<form class="mhav-inline-form" method="post" enctype="multipart/form-data" action="{% url 'website:public_page_save' 'general' %}">{% csrf_token %}<input type="hidden" name="section" value="hero">
+<div class="mhav-inline-field">{{ section_form.hero_title.label_tag }}{{ section_form.hero_title }}{{ section_form.hero_title.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.hero_em.label_tag }}{{ section_form.hero_em }}{{ section_form.hero_em.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.hero_intro.label_tag }}{{ section_form.hero_intro }}{{ section_form.hero_intro.errors }}</div>
+{% if can_photo %}<div class="mhav-inline-field"><label for="general-hero-image">Foto vervangen (optioneel)</label><input id="general-hero-image" type="file" name="image" accept="image/jpeg,image/png,image/webp"><small>Laat leeg om de huidige foto te behouden. Maximaal 25 MB.</small></div>{% endif %}
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#hero">Annuleren</a></div></form>{% endif %}
                 <span class="editorial-kicker">WELKOM BIJ DE VERENIGING</span>
                 <h1>
-                    Meer dan<br><em>een hondenschool.</em>
+                    {{ copy.hero_title }}<br><em>{{ copy.hero_em }}</em>
                 </h1>
                 <p>
-                    MHAV is een plek waar mensen en honden samen leren, trainen en plezier maken.
+                    {{ copy.hero_intro }}
                 </p>
                 <div class="editorial-actions">
                     <a class="button button-primary" href="#over-mhav">Leer ons kennen ↓</a>
                 </div>
             </div>
             <div class="editorial-hero__image">
+
                 {% if photo.image %}
                     <img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:'Onze vereniging' }}">
                 {% else %}
@@ -36,15 +44,21 @@
             <div>
                 <span class="editorial-kicker">WIE WE ZIJN</span>
                 <h2>
-                    Een vereniging met aandacht voor de band tussen mens en hond.
+                    {{ copy.intro_title }}
                 </h2>
             </div>
             <div class="editorial-prose">
+{% if can_text and edit_section != "intro" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=intro#intro">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "intro" %}<form class="mhav-inline-form" method="post" action="{% url 'website:public_page_save' 'general' %}">{% csrf_token %}<input type="hidden" name="section" value="intro">
+<div class="mhav-inline-field">{{ section_form.intro_title.label_tag }}{{ section_form.intro_title }}{{ section_form.intro_title.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.intro_p1.label_tag }}{{ section_form.intro_p1 }}{{ section_form.intro_p1.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.intro_p2.label_tag }}{{ section_form.intro_p2 }}{{ section_form.intro_p2.errors }}</div>
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#intro">Annuleren</a></div></form>{% endif %}
                 <p>
-                    Bij MHAV staat samen trainen centraal. We geloven dat vertrouwen, duidelijke communicatie en plezier de basis vormen voor een prettige samenwerking.
+                    {{ copy.intro_p1 }}
                 </p>
                 <p>
-                    Op deze pagina vind je meer over de vereniging en de praktische afspraken.
+                    {{ copy.intro_p2 }}
                 </p>
             </div>
         </div>
@@ -52,9 +66,13 @@
     <section class="editorial-section editorial-section--soft">
         <div class="container">
             <div class="editorial-section-title">
+{% if can_text and edit_section != "list" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=list#list">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "list" %}<form class="mhav-inline-form" method="post" action="{% url 'website:public_page_save' 'general' %}">{% csrf_token %}<input type="hidden" name="section" value="list">
+<div class="mhav-inline-field">{{ section_form.list_title.label_tag }}{{ section_form.list_title }}{{ section_form.list_title.errors }}</div>
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#list">Annuleren</a></div></form>{% endif %}
                 <span class="editorial-kicker">HANDIG OM TE WETEN</span>
                 <h2>
-                    Alles over MHAV.
+                    {{ copy.list_title }}
                 </h2>
             </div>
             <div class="editorial-topic-grid">
@@ -77,13 +95,18 @@
     </section>
     <section class="editorial-section">
         <div class="container editorial-feature">
+{% if can_text and edit_section != "cta" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=cta#cta">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "cta" %}<form class="mhav-inline-form" method="post" action="{% url 'website:public_page_save' 'general' %}">{% csrf_token %}<input type="hidden" name="section" value="cta">
+<div class="mhav-inline-field">{{ section_form.cta_title.label_tag }}{{ section_form.cta_title }}{{ section_form.cta_title.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.cta_text.label_tag }}{{ section_form.cta_text }}{{ section_form.cta_text.errors }}</div>
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#cta">Annuleren</a></div></form>{% endif %}
             <div>
                 <span class="editorial-kicker">WE HELPEN JE GRAAG</span>
                 <h2>
-                    Een vraag over onze vereniging?
+                    {{ copy.cta_title }}
                 </h2>
                 <p>
-                    Neem contact op met MHAV voor meer informatie.
+                    {{ copy.cta_text }}
                 </p>
             </div>
             <a class="button button-primary" href="{% url 'website:contact' %}">Contact ↗</a>

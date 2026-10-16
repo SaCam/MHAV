@@ -5,11 +5,14 @@ from django.utils.text import slugify
 
 
 class Announcement(models.Model):
+    PRIORITY_CHOICES = [("normal", "Normaal"), ("important", "Belangrijk"), ("urgent", "Urgent")]
+    priority = models.CharField("Prioriteit", max_length=12, choices=PRIORITY_CHOICES, default="normal")
     # Existing model retained: do not remove existing announcements.
     title = models.CharField(max_length=160)
     body = models.TextField()
     is_published = models.BooleanField(default=False)
     published_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField("Zichtbaar tot", null=True, blank=True, help_text="Laat leeg voor geen einddatum.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

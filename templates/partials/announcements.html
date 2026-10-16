@@ -1,0 +1,56 @@
+{% if mhav_announcements %}
+<div id="mhav-announcement-queue" aria-label="Mededelingen">
+{% for announcement in mhav_announcements %}
+<section class="mhav-alert" {% if not forloop.first %}hidden{% endif %} role="status" aria-label="Belangrijke mededeling" style="background:#fff2cc;border-bottom:2px solid #d49b1c;padding:16px 0">
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+    <div style="flex:1;min-width:230px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <strong style="font-size:1.1rem">📢 {{ announcement.title }}</strong>
+        {% if announcement.priority == 'urgent' %}<strong>Urgent</strong>{% elif announcement.priority == 'important' %}<strong>Belangrijk</strong>{% endif %}
+        <small class="mhav-announcement-count">{{ forloop.counter }} van {{ mhav_announcements|length }}</small>
+      </div>
+      <div style="white-space:pre-line">{{ announcement.body }}</div>
+    </div>
+    <form method="post" action="{% url 'content:announcement_read' announcement.pk %}" class="mhav-announcement-read">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button type="submit" class="button button-outline">Gelezen ✓</button></form>
+  </div>
+</section>
+{% endfor %}
+</div>
+<script>
+(function () {
+  const queue = document.getElementById('mhav-announcement-queue');
+  if (!queue) return;
+  const sections = Array.from(queue.querySelectorAll('.mhav-alert'));
+  let readCount = 0;
+  sections.forEach((section) => {
+    const form = section.querySelector('.mhav-announcement-read');
+    form.addEventListener('submit', async (event) => {
+      if (!window.fetch) return; // ordinary form submission remains the fallback
+      event.preventDefault();
+      const button = form.querySelector('button');
+      button.disabled = true;
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST', body: new FormData(form), credentials: 'same-origin',
+          headers: {'X-Requested-With': 'XMLHttpRequest'}
+        });
+        if (!response.ok) throw new Error('Unable to save read status');
+        section.hidden = true;
+        readCount += 1;
+        const next = sections.find((item) => !item.hidden);
+        if (next) {
+          next.hidden = false;
+          const count = next.querySelector('.mhav-announcement-count');
+          if (count) count.textContent = '1 van ' + (sections.length - readCount);
+        } else {
+          queue.hidden = true;
+        }
+      } catch (error) {
+        button.disabled = false;
+        form.submit(); // preserve normal server-side cookie flow
+      }
+    });
+  });
+})();
+</script>
+{% endif %}

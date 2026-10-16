@@ -5,26 +5,36 @@
 {% block content %}
     <section class="v6-page-hero">
         <div class="container">
+{% if can_text and edit_section != "hero" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=hero#hero">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "hero" %}<form class="mhav-inline-form" method="post" action="{% url 'website:public_page_save' 'instructors' %}">{% csrf_token %}<input type="hidden" name="section" value="hero">
+<div class="mhav-inline-field">{{ section_form.hero_title.label_tag }}{{ section_form.hero_title }}{{ section_form.hero_title.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.hero_em.label_tag }}{{ section_form.hero_em }}{{ section_form.hero_em.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.hero_intro.label_tag }}{{ section_form.hero_intro }}{{ section_form.hero_intro.errors }}</div>
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#hero">Annuleren</a></div></form>{% endif %}
             <span class="editorial-kicker">DE MENSEN ACHTER MHAV</span>
             <h1>
-                Een goed team.<br><em>Voor jou en je hond.</em>
+                {{ copy.hero_title }}<br><em>{{ copy.hero_em }}</em>
             </h1>
             <p>
-                Onze instructeurs begeleiden de trainingen en delen hun kennis en enthousiasme met de vereniging.
+                {{ copy.hero_intro }}
             </p>
         </div>
     </section>
     <section class="editorial-section">
         <div class="container">
             <div class="editorial-section-title">
+{% if can_text and edit_section != "list" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=list#list">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "list" %}<form class="mhav-inline-form" method="post" action="{% url 'website:public_page_save' 'instructors' %}">{% csrf_token %}<input type="hidden" name="section" value="list">
+<div class="mhav-inline-field">{{ section_form.list_title.label_tag }}{{ section_form.list_title }}{{ section_form.list_title.errors }}</div>
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#list">Annuleren</a></div></form>{% endif %}
                 <span class="editorial-kicker">MAAK KENNIS</span>
                 <h2>
-                    Onze instructeurs.
+                    {{ copy.list_title }}
                 </h2>
             </div>
             <div class="v6-team-grid">
                 {% for instructor in instructors %}
-                    <article class="v6-team-card">
+                    <article class="v6-team-card" id="instructor-{{ instructor.pk }}">
                         <div class="v6-team-photo">
                             {% if instructor.photo %}
                                 <img src="{{ instructor.photo.url }}" alt="Portret van {{ instructor.name }}" loading="lazy">

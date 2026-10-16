@@ -9,9 +9,9 @@
     <a class="button button-primary" href="{% url 'planning:application_list' %}">Inschrijfaanvragen</a>
     <a class="button button-outline" href="{% url 'planning:catalogue' %}">Cursusaanbod</a>
     <a class="button button-primary" href="{% url 'planning:new' 'seasons' %}">+ Nieuw seizoen</a>
-    <a class="button button-outline" href="{% url 'planning:records' 'dogs' %}">Honden ({{ dogs }})</a>
+    <!-- <a class="button button-outline" href="{% url 'planning:records' 'dogs' %}">Honden ({{ dogs }})</a>
     <a class="button button-outline" href="{% url 'planning:records' 'combinations' %}">Combinaties ({{ combinations }})</a>
-    <a class="button button-outline" href="{% url 'planning:records' 'enrollments' %}">Alle inschrijvingen</a>
+    <a class="button button-outline" href="{% url 'planning:records' 'enrollments' %}">Alle inschrijvingen</a> -->
   </div></div>
   <div class="mhav-admin-heading"><h2>Seizoenen</h2><p>Open een seizoen om lesgroepen, instructeurs en cursusinschrijvingen te beheren.</p></div>
   <div class="mhav-season-grid">{% for season in seasons %}

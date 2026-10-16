@@ -13,6 +13,7 @@ urlpatterns=[
     path('aanmeldingen/planning/actie/', views.application_plan_action, name='application_plan_action'),
     path('aanmeldingen/planning/', views.application_plan_review, name='application_plan_review'),
     path('aanmeldingen/<int:pk>/plannen/', views.application_assign, name='application_assign'),
+    path('aanmeldingen/<int:pk>/afhandelen/', views.application_handle, name='application_handle'),
     path('aanmeldingen/<int:pk>/bevestigen/', views.application_confirm, name='application_confirm'),
     path('aanmeldingen/<int:pk>/combinatie/', views.application_link_combination, name='application_link_combination'),
     path('aanmeldingen/<int:pk>/', views.application_detail, name='application_detail'),

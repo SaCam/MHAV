@@ -55,6 +55,9 @@
                 </fieldset>
                 <fieldset>
                     <legend>2. Gegevens cursist</legend>
+                    {% if user.is_authenticated %}
+                        <p>Je bent ingelogd. Je kunt alleen jezelf aanmelden. Je naam en e-mailadres komen uit je MHAV-account en kunnen hier niet worden gewijzigd.</p>
+                    {% endif %}
                     <div class="mhav-registration-grid">
                         {% for field in form %}
                             {% if field.name == 'first_name' or field.name == 'middle_name' or field.name == 'last_name' or field.name == 'email' or field.name == 'phone' or field.name == 'street' or field.name == 'house_number' or field.name == 'postal_code' or field.name == 'city' or field.name == 'country' %}

@@ -280,6 +280,9 @@ def public_application(request):
                 if request.user.is_authenticated and request.user.email.strip().casefold() == application.email.strip().casefold():
                     application.user = request.user
                 application.save()
+                if application.user_id:
+                    from apps.accounts.dog_profiles import ensure_application_dog
+                    ensure_application_dog(application)
             request.session['last_course_application_id'] = application.pk
             request.session['mhav_pending_application_id'] = application.pk
             # Email verification is sent on demand; no account is created here.
@@ -399,12 +402,14 @@ def application_list(request):
     search = request.GET.get('q', '').strip()
     applications = CourseApplication.objects.select_related('course', 'season', 'proposed_group', 'linked_enrollment__group__season', 'linked_enrollment__group__course')
     if status == 'open':
-        applications = applications.filter(linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED])
+        applications = applications.filter(linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST])
     elif status == 'draft':
         applications = applications.filter(proposed_group__isnull=False, linked_enrollment__isnull=True)
     elif status == 'unplanned':
         applications = applications.filter(proposed_group__isnull=True, linked_enrollment__isnull=True).exclude(
-            status__in=[CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED])
+            status__in=[CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST])
+    elif status == 'handled':
+        applications = applications.filter(status__in=[CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST])
     elif status == 'processed':
         applications = applications.filter(status=CourseApplication.Status.PROCESSED)
     elif status in CourseApplication.Status.values:
@@ -430,32 +435,37 @@ def application_list(request):
     open_course_ids = {a.course_id for a in items if a.season_id is None and a.course_id}
     groups = list(TrainingGroup.objects.filter(course_id__in=course_ids).filter(Q(season_id__in=season_ids) | Q(course_id__in=open_course_ids, season__status__in=[Season.Status.ACTIVE, Season.Status.DRAFT]))
                   .select_related('season').annotate(placed_count=Count('enrollments', filter=Q(enrollments__status=Enrollment.Status.PLACED)))) if (season_ids or open_course_ids) else []
+    concept_counts = dict(CourseApplication.objects.filter(proposed_group__isnull=False, linked_enrollment__isnull=True).values('proposed_group_id').annotate(total=Count('pk')).values_list('proposed_group_id', 'total'))
     by_pair = defaultdict(list)
     for group in groups:
         by_pair[(group.season_id, group.course_id)].append(group)
     for application in items:
         application.open_application = application.season_id is None
-        application.planning_state = ('Verwerkt' if application.linked_enrollment_id else 'Voorlopig gepland' if application.proposed_group_id else 'Te plannen')
+        application.planning_state = ('Verwerkt' if application.linked_enrollment_id else 'Afgehandeld' if application.status in (CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST) else 'Voorlopig gepland' if application.proposed_group_id else 'Te plannen')
         application.group_options = []
-        if application.linked_enrollment_id or application.status == CourseApplication.Status.PROCESSED:
+        if application.linked_enrollment_id or application.status in (CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST):
             continue
         for group in ([g for g in groups if g.course_id == application.course_id and g.season.status in (Season.Status.ACTIVE, Season.Status.DRAFT)] if application.season_id is None else by_pair.get((application.season_id, application.course_id), [])):
             preference = (application.time_preferences or {}).get(str(group.pk), '')
             application.group_options.append({
                 'group': group, 'preference': preference,
-                'free': max(0, group.capacity - group.placed_count),
-                'available': group.execution_status == 'planned' and group.placed_count < group.capacity and not group.planning_locked_at,
+                'definitive': group.placed_count,
+                'concept': concept_counts.get(group.pk, 0),
+                'capacity': group.capacity,
+                'free': max(0, group.capacity - group.placed_count - concept_counts.get(group.pk, 0)),
+                'available': group.execution_status == 'planned' and group.placed_count + concept_counts.get(group.pk, 0) < group.capacity and not group.planning_locked_at,
             })
         application.preferred_available = any(o['preference'] == 'preferred' and o['available'] for o in application.group_options)
         application.has_preference = any(o['preference'] == 'preferred' for o in application.group_options)
     return render(request, 'planning/applications.html', {
         'applications': items, 'total': total,
-        'statuses': [('open', 'Openstaande aanmeldingen'), ('unplanned', 'Te plannen'), ('draft', 'Voorlopig gepland'), ('processed', 'Verwerkt'), ('rejected', 'Afgewezen')],
+        'statuses': [('open', 'Openstaande aanmeldingen'), ('unplanned', 'Te plannen'), ('draft', 'Voorlopig gepland'), ('processed', 'Verwerkt'), ('handled', 'Afgehandeld'), ('waitlist', 'Wachtlijst'), ('rejected', 'Niet geplaatst / ingetrokken')],
         'current_status': status, 'current_season': season_filter, 'current_course': course_filter, 'search_query': search,
         'seasons': Season.objects.all().order_by('-starts_on'),
         'courses': SitePage.objects.filter(course_applications__isnull=False).distinct().order_by('title'),
         'action_groups': TrainingGroup.objects.select_related('season').order_by('season__starts_on', 'name'),
-        'draft_count': CourseApplication.objects.filter(proposed_group__isnull=False, linked_enrollment__isnull=True).count(),
+        'draft_count': CourseApplication.objects.filter(proposed_group__isnull=False, linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST]).count(),
+        'season_reviews': _season_application_reviews(),
     })
 
 
@@ -470,7 +480,8 @@ def application_detail(request, pk):
     from .application_planning import compatible_groups
     groups = TrainingGroup.objects.filter(course=application.course, season__status__in=[Season.Status.DRAFT, Season.Status.ACTIVE], planning_locked_at__isnull=True, execution_status='planned').select_related('season') if application.course_id and application.season_id is None else (TrainingGroup.objects.filter(season=application.season, course=application.course, planning_locked_at__isnull=True, execution_status='planned').select_related('season') if application.season_id and application.course_id else TrainingGroup.objects.none())
     eligible = [g for _, g in compatible_groups(application, groups)]
-    return render(request, 'planning/application_detail.html', {'application':application, 'form':form, 'eligible_groups':eligible, 'combinations':Combination.objects.select_related('handler', 'dog').order_by('handler__last_name')[:300]})
+    preferences = [{'group': g, 'preference': (application.time_preferences or {}).get(str(g.pk), '')} for g in groups.order_by('day', 'starts_at', 'pk')]
+    return render(request, 'planning/application_detail.html', {'application':application, 'form':form, 'eligible_groups':eligible, 'time_preference_rows':preferences, 'combinations':Combination.objects.select_related('handler', 'dog').order_by('handler__last_name')[:300]})
 
 
 def is_trainer(user):
@@ -479,9 +490,19 @@ def is_trainer(user):
     )
 
 
+def trainer_availability_locked(season):
+    """Availability is frozen once any group in the season is approved or enrolled."""
+    return (season.status != Season.Status.DRAFT or
+            TrainingGroup.objects.filter(season=season).filter(
+                Q(planning_locked_at__isnull=False) |
+                ~Q(execution_status=TrainingGroup.ExecutionStatus.PLANNED) |
+                Q(enrollments__status=Enrollment.Status.PLACED)
+            ).exists())
+
+
 @user_passes_test(is_trainer, login_url='accounts:login')
 def trainer_seasons(request):
-    seasons = Season.objects.filter(status=Season.Status.DRAFT).order_by('starts_on')
+    seasons = [season for season in Season.objects.filter(status=Season.Status.DRAFT).order_by('starts_on') if not trainer_availability_locked(season)]
     responses = {r.season_id: r for r in TrainerSeasonAvailability.objects.filter(trainer=request.user)}
     return render(request, 'planning/trainer_seasons.html', {
         'seasons_with_responses': [(season, responses.get(season.pk)) for season in seasons],
@@ -491,8 +512,9 @@ def trainer_seasons(request):
 @user_passes_test(is_trainer, login_url='accounts:login')
 def trainer_availability(request, pk):
     season = get_object_or_404(Season, pk=pk)
-    if season.status != Season.Status.DRAFT:
-        raise Http404('De beschikbaarheid van dit seizoen is gesloten.')
+    if trainer_availability_locked(season):
+        messages.error(request, 'De beschikbaarheid is vergrendeld omdat de cursusplanning is goedgekeurd of gestart.')
+        return redirect('planning:trainer_seasons')
 
     response = TrainerSeasonAvailability.objects.filter(
         season=season, trainer=request.user
@@ -891,7 +913,7 @@ def application_assign(request, pk):
         if application.proposed_group_id and TrainingGroup.objects.filter(pk=application.proposed_group_id, planning_locked_at__isnull=False).exists():
             messages.error(request, 'Deze conceptplaatsing is goedgekeurd en vergrendeld.')
             return redirect('planning:application_detail', pk=pk)
-        if application.linked_enrollment_id or application.status in (CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED):
+        if application.linked_enrollment_id or application.status in (CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST):
             messages.error(request, 'Deze aanvraag kan niet meer voorlopig worden gepland.')
             return redirect('planning:application_detail', pk=pk)
         if not group_value:
@@ -937,7 +959,7 @@ def application_confirm(request, pk):
     from django.db import transaction
     with transaction.atomic():
         application = get_object_or_404(CourseApplication.objects.select_for_update().select_related('proposed_group'), pk=pk)
-        if application.linked_enrollment_id or application.status == CourseApplication.Status.REJECTED or not application.proposed_group_id:
+        if application.linked_enrollment_id or application.status in (CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST) or not application.proposed_group_id:
             messages.error(request, 'Deze aanvraag heeft geen bevestigbare conceptplaatsing.')
             return redirect('planning:application_plan_review')
         group = TrainingGroup.objects.select_for_update().get(pk=application.proposed_group_id)
@@ -982,3 +1004,71 @@ def application_link_combination(request, pk):
     application.save(update_fields=['linked_combination', 'updated_at'])
     messages.success(request, 'Combinatie gekoppeld.')
     return redirect('planning:application_detail', pk=pk)
+
+
+def _season_application_reviews():
+    """Only flag unplaced applicants once all groups are locked and drafts finalized."""
+    from django.db.models import Count, Q
+    seasons = Season.objects.annotate(
+        total_groups=Count('groups', distinct=True),
+        unlocked_groups=Count('groups', filter=Q(groups__planning_locked_at__isnull=True, groups__execution_status='planned'), distinct=True),
+    ).filter(total_groups__gt=0, unlocked_groups=0).order_by('-starts_on')
+    reviews = []
+    for season in seasons:
+        drafts = CourseApplication.objects.filter(season=season, proposed_group__isnull=False, linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST])
+        if drafts.exists():
+            continue  # Definitive enrollment of concept placements still pending.
+        count = CourseApplication.objects.filter(season=season, linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST, CourseApplication.Status.PROCESSED]).count()
+        if count:
+            reviews.append({'season': season, 'count': count})
+    return reviews
+
+
+@require_POST
+@user_passes_test(is_planner, login_url='accounts:login')
+def application_handle(request, pk):
+    """Human decision only: no automated rejection or email."""
+    from django.db import transaction
+    from django.utils import timezone
+    from django.urls import reverse
+    from urllib.parse import urlencode
+    action = request.POST.get('decision', '')
+    reason = request.POST.get('reason', '')
+    valid_reasons = {'capacity', 'availability', 'withdrawn', 'other'}
+    with transaction.atomic():
+        app = get_object_or_404(CourseApplication.objects.select_for_update(), pk=pk)
+        if app.linked_enrollment_id or app.status == CourseApplication.Status.PROCESSED:
+            messages.error(request, 'Definitief geplaatste aanmeldingen worden via Cursusuitvoering beheerd.')
+        elif action == 'reopen':
+            if app.status not in (CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST):
+                messages.error(request, 'Deze aanmelding is niet afgesloten of op de wachtlijst.')
+            else:
+                app.status = CourseApplication.Status.NEW
+                app.closure_reason = ''
+                app.closure_note = ''
+                app.handled_at = None
+                app.handled_by = None
+                app.save(update_fields=['status','closure_reason','closure_note','handled_at','handled_by','updated_at'])
+                messages.success(request, 'Aanmelding heropend.')
+        elif action in ('close', 'waitlist'):
+            if app.status in (CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST):
+                messages.error(request, 'Heropen eerst deze aanmelding om een nieuw besluit te nemen.')
+            elif action == 'close' and reason not in valid_reasons:
+                messages.error(request, 'Selecteer een geldige reden voor afsluiten.')
+            elif action == 'waitlist' and not app.season_id:
+                messages.error(request, 'Koppel eerst een seizoen voordat je een aanmelding op de wachtlijst zet.')
+            else:
+                app.status = CourseApplication.Status.REJECTED if action == 'close' else CourseApplication.Status.WAITLIST
+                app.closure_reason = reason if action == 'close' else ''
+                app.closure_note = request.POST.get('note', '').strip()[:4000]
+                app.handled_at = timezone.now()
+                app.handled_by = request.user
+                app.proposed_group = None  # Release provisional capacity.
+                app.save(update_fields=['status','closure_reason','closure_note','handled_at','handled_by','proposed_group','updated_at'])
+                messages.success(request, 'Aanmelding afgehandeld. Er is geen e-mail verzonden.')
+        else:
+            messages.error(request, 'Ongeldige afhandelactie.')
+    destination = reverse('planning:application_list')
+    if app.season_id:
+        destination += '?' + urlencode({'season': app.season_id, 'status': 'handled' if action != 'reopen' else 'open'})
+    return redirect(destination)

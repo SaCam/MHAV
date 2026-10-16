@@ -81,6 +81,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'apps.accounts.context_processors.mhav_permissions',
+                'apps.content.announcement_context.active_announcements',
                 'django.contrib.messages.context_processors.messages',
             ],
         },
@@ -130,7 +131,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Amsterdam'
 
 USE_I18N = True
 

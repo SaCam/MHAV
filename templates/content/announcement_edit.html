@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Mededeling bewerken | MHAV{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/mhav-beheer.css' %}"><link rel="stylesheet" href="{% static 'css/mhav-v21e.css' %}">{% endblock %}
+{% block content %}<section class="page-intro"><div class="container"><a href="{% url 'content:announcements_manage' %}">← Mededelingen</a><h1>{% if announcement %}Mededeling bewerken{% else %}Nieuwe mededeling{% endif %}</h1><p>Beheer de inhoud, prioriteit en zichtbaarheid van de mededeling.</p></div></section>
+<section class="section"><div class="container mhav-admin-refresh"><div class="mhav-admin-panel" style="max-width:800px"><h2>Gegevens</h2><p>Na het wijzigen van een gepubliceerde mededeling wordt deze opnieuw zichtbaar voor bezoekers.</p><form method="post" class="mhav-announcement-form">{% csrf_token %}{{ form.as_p }}<div class="mhav-admin-actions"><button class="button button-primary" type="submit">Opslaan</button><a class="button button-outline" href="{% url 'content:announcements_manage' %}">Annuleren</a></div></form></div></div></section>{% endblock %}

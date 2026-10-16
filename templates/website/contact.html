@@ -6,12 +6,18 @@
     <section class="mhav-section-hero">
         <div class="container mhav-section-layout">
             <div class="mhav-section-intro">
+{% if can_text and edit_section != "hero" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=hero#hero">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "hero" %}<form class="mhav-inline-form" method="post" enctype="multipart/form-data" action="{% url 'website:public_page_save' 'contact' %}">{% csrf_token %}<input type="hidden" name="section" value="hero">
+<div class="mhav-inline-field">{{ section_form.hero_title.label_tag }}{{ section_form.hero_title }}{{ section_form.hero_title.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.hero_intro.label_tag }}{{ section_form.hero_intro }}{{ section_form.hero_intro.errors }}</div>
+{% if can_photo %}<div class="mhav-inline-field"><label for="contact-hero-image">Foto vervangen (optioneel)</label><input id="contact-hero-image" type="file" name="image" accept="image/jpeg,image/png,image/webp"><small>Laat leeg om de huidige foto te behouden. Maximaal 25 MB.</small></div>{% endif %}
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#hero">Annuleren</a></div></form>{% endif %}
                 <span class="eyebrow">WE HELPEN JE GRAAG</span>
                 <h1>
                     Contact
                 </h1>
                 <p>
-                    Wil je meer weten over MHAV of onze trainingen? We horen graag van je.
+                    {{ copy.hero_intro }}
                 </p>
             </div>
             <div class="mhav-section-photo">
@@ -28,8 +34,12 @@
     <section class="section">
         <div class="container page-detail-grid">
             <article class="page-detail-body">
+{% if can_text and edit_section != "intro" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=intro#intro">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "intro" %}<form class="mhav-inline-form" method="post" action="{% url 'website:public_page_save' 'contact' %}">{% csrf_token %}<input type="hidden" name="section" value="intro">
+<div class="mhav-inline-field">{{ section_form.intro_title.label_tag }}{{ section_form.intro_title }}{{ section_form.intro_title.errors }}</div>
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#intro">Annuleren</a></div></form>{% endif %}
                 <h2>
-                    Neem contact op
+                    {{ copy.intro_title }}
                 </h2>
                 {% if page %}
                     <div class="article-body">
@@ -41,11 +51,16 @@
                     </p>
                 {% endif %}
                 <div class="v6-form-panel" style="margin-top:32px">
+{% if can_text and edit_section != "form" %}<div class="mhav-section-edit"><a class="mhav-pencil" href="?edit=form#form">✎ Bewerken</a></div>{% endif %}
+{% if edit_section == "form" %}<form class="mhav-inline-form" method="post" action="{% url 'website:public_page_save' 'contact' %}">{% csrf_token %}<input type="hidden" name="section" value="form">
+<div class="mhav-inline-field">{{ section_form.form_title.label_tag }}{{ section_form.form_title }}{{ section_form.form_title.errors }}</div>
+<div class="mhav-inline-field">{{ section_form.form_intro.label_tag }}{{ section_form.form_intro }}{{ section_form.form_intro.errors }}</div>
+<div class="mhav-inline-actions"><button class="button button-primary" type="submit">Opslaan ✓</button><a class="button button-outline" href="?#form">Annuleren</a></div></form>{% endif %}
                     <h2>
-                        Stuur ons een bericht
+                        {{ copy.form_title }}
                     </h2>
                     <p>
-                        Vul het formulier in. Je bericht wordt opgeslagen voor de beheerders van MHAV.
+                        {{ copy.form_intro }}
                     </p>
                     <form method="post" class="v6-contact-form">
                         {% csrf_token %}
