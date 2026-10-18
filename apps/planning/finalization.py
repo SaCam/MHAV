@@ -80,6 +80,8 @@ def resolve_identity(app, *, create=False):
 
 
 def inspect_application(app, group):
+    if app.status in (app.Status.PENDING_CONFIRMATION, app.Status.DECLINED):
+        return 'Aanmelding is nog niet door de cursist bevestigd of is afgewezen'
     if app.status == app.Status.REJECTED:
         return 'Aanvraag is afgewezen'
     if not group.planning_locked_at:

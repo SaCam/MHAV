@@ -165,6 +165,8 @@ class Enrollment(models.Model):
 class CourseApplication(models.Model):
     """Public intake request; not a confirmed place or a member account."""
     class Status(models.TextChoices):
+        PENDING_CONFIRMATION = 'pending_confirmation', 'Wacht op bevestiging cursist'
+        DECLINED = 'declined', 'Afgewezen door cursist'
         NEW = 'new', 'Nieuw'
         REVIEW = 'review', 'In behandeling'
         WAITING = 'waiting', 'Wacht op indeling'
@@ -174,7 +176,12 @@ class CourseApplication(models.Model):
 
     created_at = models.DateTimeField('Ontvangen op', auto_now_add=True)
     updated_at = models.DateTimeField('Bijgewerkt op', auto_now=True)
-    status = models.CharField('Status', max_length=12, choices=Status.choices, default=Status.NEW)
+    status = models.CharField('Status', max_length=24, choices=Status.choices, default=Status.NEW)
+    participant_confirmed_at = models.DateTimeField('Aanmelding bevestigd door cursist op', null=True, blank=True)
+    participant_declined_at = models.DateTimeField('Aanmelding afgewezen door cursist op', null=True, blank=True)
+    participant_confirmed_at = models.DateTimeField('Aanmelding bevestigd door cursist op', null=True, blank=True)
+    participant_declined_at = models.DateTimeField('Aanmelding afgewezen door cursist op', null=True, blank=True)
+    email_verified_at = models.DateTimeField('E-mailadres bevestigd op', null=True, blank=True)
     confirmation_email_status = models.CharField('Bevestigingsmail', max_length=12, choices=[('not_sent', 'Nog niet verzonden'), ('sent', 'Verzonden'), ('failed', 'Verzenden mislukt')], default='not_sent')
     confirmation_email_sent_at = models.DateTimeField('Bevestigingsmail verzonden op', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_applications')

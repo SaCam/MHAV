@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Test e-mailbox | MHAV{% endblock %}
+{% block content %}<section class="page-intro"><div class="container"><h1>Test e-mailbox</h1>
+<p>Alleen lokaal in DEBUG-modus. Links bevatten verificatietokens: deel ze niet.</p>
+{% for email in emails %}<article class="mhav-followup"><h2>{{ email.subject }}</h2><p>Aan: {{ email.recipient }}</p><pre style="white-space:pre-wrap">{{ email.body }}</pre>
+{% for link in email.links %}<p><a href="{{ link }}">Open testlink →</a></p>{% endfor %}</article>
+{% empty %}<p>Nog geen testmails ontvangen.</p>{% endfor %}</div></section>{% endblock %}

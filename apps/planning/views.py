@@ -286,6 +286,10 @@ def public_application(request, on_behalf=False):
                 application.privacy_accepted_at = timezone.now()
                 application.time_preferences = preferences
                 application.submission_source = 'admin' if on_behalf else ('member' if request.user.is_authenticated else 'guest')
+                if on_behalf:
+                    application.status = CourseApplication.Status.PENDING_CONFIRMATION
+                if on_behalf:
+                    application.status = CourseApplication.Status.PENDING_CONFIRMATION
                 if request.user.is_authenticated:
                     application.submitted_by = request.user
                 if request.user.is_authenticated and not on_behalf:
@@ -301,7 +305,11 @@ def public_application(request, on_behalf=False):
             if not on_behalf:
                 request.session['last_course_application_id'] = application.pk
                 request.session['mhav_pending_application_id'] = application.pk
-            # Email verification is sent on demand; no account is created here.
+            # Email confirmation is independent of optional account activation.
+            from .email_verification import send_application_verification
+            sent = send_application_verification(request, application)
+            if not sent:
+                messages.warning(request, 'Aanmelding opgeslagen, maar bevestigingsmail niet verzonden. Vraag een nieuwe link aan.')
             if on_behalf:
                 messages.success(request, 'De aanmelding is namens de cursist ontvangen.')
                 return redirect('planning:application_detail', pk=application.pk)
@@ -445,11 +453,15 @@ def application_list(request):
     search = request.GET.get('q', '').strip()
     applications = CourseApplication.objects.select_related('course', 'season', 'proposed_group', 'linked_enrollment__group__season', 'linked_enrollment__group__course')
     if status == 'open':
-        applications = applications.filter(linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST])
+        applications = applications.exclude(status__in=[CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED]).filter(linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST])
+    elif status == 'pending_confirmation':
+        applications = applications.filter(status=CourseApplication.Status.PENDING_CONFIRMATION)
+    elif status == 'pending_confirmation':
+        applications = applications.filter(status=CourseApplication.Status.PENDING_CONFIRMATION)
     elif status == 'draft':
         applications = applications.filter(proposed_group__isnull=False, linked_enrollment__isnull=True)
     elif status == 'unplanned':
-        applications = applications.filter(proposed_group__isnull=True, linked_enrollment__isnull=True).exclude(
+        applications = applications.exclude(status__in=[CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED]).filter(proposed_group__isnull=True, linked_enrollment__isnull=True).exclude(
             status__in=[CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST])
     elif status == 'handled':
         applications = applications.filter(status__in=[CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST])
@@ -484,9 +496,9 @@ def application_list(request):
         by_pair[(group.season_id, group.course_id)].append(group)
     for application in items:
         application.open_application = application.season_id is None
-        application.planning_state = ('Verwerkt' if application.linked_enrollment_id else 'Afgehandeld' if application.status in (CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST) else 'Voorlopig gepland' if application.proposed_group_id else 'Te plannen')
+        application.planning_state = ('Wacht op bevestiging cursist' if application.status == CourseApplication.Status.PENDING_CONFIRMATION else 'Afgewezen door cursist' if application.status == CourseApplication.Status.DECLINED else 'Verwerkt' if application.linked_enrollment_id else 'Afgehandeld' if application.status in (CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST) else 'Voorlopig gepland' if application.proposed_group_id else 'Te plannen')
         application.group_options = []
-        if application.linked_enrollment_id or application.status in (CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST):
+        if application.linked_enrollment_id or application.status in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED, CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST):
             continue
         for group in ([g for g in groups if g.course_id == application.course_id and g.season.status in (Season.Status.ACTIVE, Season.Status.DRAFT)] if application.season_id is None else by_pair.get((application.season_id, application.course_id), [])):
             preference = (application.time_preferences or {}).get(str(group.pk), '')
@@ -502,12 +514,12 @@ def application_list(request):
         application.has_preference = any(o['preference'] == 'preferred' for o in application.group_options)
     return render(request, 'planning/applications.html', {
         'applications': items, 'total': total,
-        'statuses': [('open', 'Openstaande aanmeldingen'), ('unplanned', 'Te plannen'), ('draft', 'Voorlopig gepland'), ('processed', 'Verwerkt'), ('handled', 'Afgehandeld'), ('waitlist', 'Wachtlijst'), ('rejected', 'Niet geplaatst / ingetrokken')],
+        'statuses': [('open', 'Openstaande aanmeldingen'), ('pending_confirmation', 'Wacht op bevestiging cursist'), ('declined', 'Afgewezen door cursist'), ('pending_confirmation', 'Wacht op bevestiging cursist'), ('declined', 'Afgewezen door cursist'), ('unplanned', 'Te plannen'), ('draft', 'Voorlopig gepland'), ('processed', 'Verwerkt'), ('handled', 'Afgehandeld'), ('waitlist', 'Wachtlijst'), ('rejected', 'Niet geplaatst / ingetrokken')],
         'current_status': status, 'current_season': season_filter, 'current_course': course_filter, 'search_query': search,
         'seasons': Season.objects.all().order_by('-starts_on'),
         'courses': SitePage.objects.filter(course_applications__isnull=False).distinct().order_by('title'),
         'action_groups': TrainingGroup.objects.select_related('season').order_by('season__starts_on', 'name'),
-        'draft_count': CourseApplication.objects.filter(proposed_group__isnull=False, linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST]).count(),
+        'draft_count': CourseApplication.objects.filter(proposed_group__isnull=False, linked_enrollment__isnull=True).exclude(status__in=[CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST]).count(),
         'season_reviews': _season_application_reviews(),
     })
 
@@ -1105,10 +1117,16 @@ def application_assign(request, pk):
     group_value = request.POST.get('group', '')
     with transaction.atomic():
         application = get_object_or_404(CourseApplication.objects.select_for_update(), pk=pk)
+        if application.status in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED):
+            messages.error(request, 'De cursist heeft deze aanmelding nog niet bevestigd of heeft deze afgewezen.')
+            return redirect('planning:application_detail', pk=pk)
+        if application.status in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED):
+            messages.error(request, 'De cursist heeft deze aanmelding nog niet bevestigd of heeft deze afgewezen.')
+            return redirect('planning:application_detail', pk=pk)
         if application.proposed_group_id and TrainingGroup.objects.filter(pk=application.proposed_group_id, planning_locked_at__isnull=False).exists():
             messages.error(request, 'Deze conceptplaatsing is goedgekeurd en vergrendeld.')
             return redirect('planning:application_detail', pk=pk)
-        if application.linked_enrollment_id or application.status in (CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST):
+        if application.linked_enrollment_id or application.status in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED, CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST):
             messages.error(request, 'Deze aanvraag kan niet meer voorlopig worden gepland.')
             return redirect('planning:application_detail', pk=pk)
         if not group_value:
@@ -1159,6 +1177,12 @@ def application_confirm(request, pk):
     from django.db import transaction
     with transaction.atomic():
         application = get_object_or_404(CourseApplication.objects.select_for_update().select_related('proposed_group'), pk=pk)
+        if application.status in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED):
+            messages.error(request, 'Deze aanmelding is nog niet bevestigd door de cursist.')
+            return redirect('planning:application_plan_review')
+        if application.status in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED):
+            messages.error(request, 'Deze aanmelding is nog niet bevestigd door de cursist.')
+            return redirect('planning:application_plan_review')
         if application.linked_enrollment_id or application.status in (CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST) or not application.proposed_group_id:
             messages.error(request, 'Deze aanvraag heeft geen bevestigbare conceptplaatsing.')
             return redirect('planning:application_plan_review')

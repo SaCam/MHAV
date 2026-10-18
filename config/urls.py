@@ -11,4 +11,6 @@ urlpatterns = [
     path("", include("apps.website.urls")),
 ]
 if settings.DEBUG:
+    from apps.planning.dev_mailbox import mailbox
+    urlpatterns += [path('dev/test-emailbox/', mailbox, name='dev_mailbox')]
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

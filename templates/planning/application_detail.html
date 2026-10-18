@@ -86,6 +86,8 @@
                 <h3>Identiteit en MHAV-account</h3>
                 {% if application.user_id %}
                   <p>Gekoppeld account: {{ application.user.get_full_name }} ({{ application.user.email }})</p>
+                  <p><strong>Bevestiging cursist:</strong> {% if application.participant_confirmed_at %}Bevestigd op {{ application.participant_confirmed_at|date:'d-m-Y H:i' }}{% elif application.status == 'declined' %}Afgewezen{% elif application.status == 'pending_confirmation' %}Wacht op bevestiging{% else %}Nog niet bevestigd{% endif %}</p>
+                  <p><strong>E-mail bevestigd:</strong> {% if application.email_verified_at %}Ja, op {{ application.email_verified_at|date:'d-m-Y H:i' }}{% else %}Nee — {% if application.confirmation_email_status == 'sent' %}verzonden{% else %}{{ application.get_confirmation_email_status_display }}{% endif %}{% endif %}</p>
                   {% if application.identity_verified_at %}<p>Handmatig gecontroleerd op {{ application.identity_verified_at|date:'d-m-Y H:i' }} door {{ application.identity_verified_by }}.</p>{% endif %}
                 {% elif not application.linked_enrollment_id %}
                   <p>Alleen een gelijk e-mailadres is geen bewijs van identiteit. Controleer de cursist via een onafhankelijk kanaal voordat je een bestaand account koppelt.</p>

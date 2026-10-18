@@ -14,6 +14,8 @@ def suitable_seasons(application):
     if application.linked_enrollment_id or application.proposed_group_id:
         return []
     if application.status in (
+        CourseApplication.Status.PENDING_CONFIRMATION,
+        CourseApplication.Status.DECLINED,
         CourseApplication.Status.PROCESSED,
         CourseApplication.Status.REJECTED,
         CourseApplication.Status.WAITLIST,

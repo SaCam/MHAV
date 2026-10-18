@@ -2,6 +2,7 @@ from django.urls import path
 from django.views.generic import TemplateView
 from . import views
 from apps.planning import views as planning_views
+from apps.planning import email_verification
 
 app_name = "website"
 urlpatterns = [
@@ -13,6 +14,8 @@ urlpatterns = [
     path("cursussen/", views.courses, name="courses"),
     path("inschrijven/", planning_views.public_application, name="application"),
     path("inschrijven/bedankt/", planning_views.application_thanks, name="application_thanks"),
+    path("inschrijven/email-bevestigen/<str:token>/", email_verification.verify_application_email, name="application_verify_email"),
+    path("inschrijven/bevestiging-opnieuw/", email_verification.resend_application_verification, name="application_resend_verification"),
     path("inschrijven/account-uitnodiging/", planning_views.request_account_invite, name="application_account_invite"),
     path("inschrijven/account-activeren/<str:token>/", planning_views.application_account_claim, name="application_account_claim"),
     path("cursussen/beheer/", views.course_manage, name="course_manage"),

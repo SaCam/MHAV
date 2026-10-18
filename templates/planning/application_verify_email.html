@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Aanmelding bevestigen | MHAV{% endblock %}
+{% block content %}<section class="page-intro"><div class="container">
+<h1>Bevestig je cursusaanmelding</h1>
+{% if declined %}<p>Je hebt deze aanmelding afgewezen. Neem contact op met MHAV als dit niet de bedoeling was.</p>
+{% elif verified %}<p>Je aanmelding is bevestigd. MHAV zal je aanvraag verder behandelen. Dit is nog geen definitieve cursusplaats.</p>
+{% else %}
+<p>{% if application.submission_source == 'admin' %}Een beheerder van MHAV heeft een cursusaanmelding voor je aangemaakt.{% else %}Je hebt een cursusaanmelding gedaan.{% endif %}</p>
+<p><strong>{{ application.first_name }} {{ application.last_name }}</strong> — {{ application.dog_name }} — {{ application.email }}</p>
+<form method="post">{% csrf_token %}
+<label style="display:block;margin:1rem 0"><input type="checkbox" name="create_account"> Ik wil ook een MHAV-account aanmaken (optioneel)</label>
+<button class="button button-primary" type="submit" name="decision" value="confirm">Aanmelding bevestigen</button>
+{% if application.submission_source == 'admin' %}<button class="button" type="submit" name="decision" value="decline" formnovalidate>Ik wil me niet aanmelden</button>{% endif %}
+</form>
+{% endif %}
+<p>Een MHAV-account is niet verplicht. Je aanmelding is geen bevestigde cursusplaats.</p>
+</div></section>{% endblock %}

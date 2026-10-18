@@ -167,7 +167,8 @@ LOGIN_URL = "/account/inloggen/"
 LOGIN_REDIRECT_URL = "/account/mijn-mhav/"
 LOGOUT_REDIRECT_URL = "/"
 DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_FROM_EMAIL", "MHAV <noreply@mhav.nl>")
-EMAIL_BACKEND = os.getenv("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_BACKEND = os.getenv("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.filebased.EmailBackend" if DEBUG else "django.core.mail.backends.console.EmailBackend")
+EMAIL_FILE_PATH = BASE_DIR / 'dev_emails' if DEBUG else None
 EMAIL_HOST = os.getenv("DJANGO_EMAIL_HOST", "")
 EMAIL_PORT = int(os.getenv("DJANGO_EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("DJANGO_EMAIL_USE_TLS", "True").lower() == "true"
