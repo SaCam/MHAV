@@ -282,6 +282,7 @@ def public_application(request, on_behalf=False):
         if not preference_error:
             with transaction.atomic():
                 application = form.save(commit=False)
+                application.requested_season = application.season if application.start_preference == CourseApplication.StartPreference.SPECIFIC else None
                 application.privacy_accepted_at = timezone.now()
                 application.time_preferences = preferences
                 application.submission_source = 'admin' if on_behalf else ('member' if request.user.is_authenticated else 'guest')

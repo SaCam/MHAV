@@ -127,7 +127,7 @@ class CourseApplicationForm(StyledForm):
     class Meta:
         model = CourseApplication
         fields = ('first_name','middle_name','last_name','email','phone','street','house_number','postal_code','city','country',
-                  'dog_name','dog_breed','dog_birth_date','dog_sex','dog_origin','dog_pedigree','dog_notes','second_handler_name','season','course',
+                  'dog_name','dog_breed','dog_birth_date','dog_sex','dog_origin','dog_pedigree','dog_notes','second_handler_name','start_preference','season','course',
                   'dog_count','first_dog','trained_before','experience','availability','remarks')
         widgets = {
             'dog_notes': forms.Textarea(attrs={'rows':3}),
@@ -160,6 +160,8 @@ class CourseApplicationForm(StyledForm):
         from apps.website.views import TRAINING_SLUGS
         from .models import SeasonCourseOffering
         open_offerings = [o for o in SeasonCourseOffering.objects.select_related('season', 'course').all() if o.accepts_applications()]
+        # Backward compatibility: older registration clients do not send this field.
+        self.fields['start_preference'].required = False
         self.fields['season'].queryset = Season.objects.filter(pk__in=[o.season_id for o in open_offerings])
         self.fields['season'].required = False
         self.fields['season'].empty_label = 'Geen voorkeur / nog niet bekend'
@@ -189,7 +191,20 @@ class CourseApplicationForm(StyledForm):
             data['dog_name'] = dog.name
             data['dog_breed'] = dog.breed
             data['dog_birth_date'] = dog.date_of_birth
+        preference = data.get('start_preference')
         season, course = data.get('season'), data.get('course')
+        if not preference and 'start_preference' not in self.data:
+            # Legacy submissions: a selected season means an explicit request.
+            preference = (CourseApplication.StartPreference.SPECIFIC if season
+                          else CourseApplication.StartPreference.FLEXIBLE)
+            data['start_preference'] = preference
+        elif not preference:
+            self.add_error('start_preference', 'Kies wanneer je wilt beginnen.')
+        if preference == CourseApplication.StartPreference.SPECIFIC and not season:
+            self.add_error('season', 'Kies het seizoen waarin je bij voorkeur wilt starten.')
+        if preference != CourseApplication.StartPreference.SPECIFIC and season:
+            self.add_error('season', 'Kies alleen een seizoen wanneer je een specifieke cursusperiode wilt.')
+
         if season and course:
             from .models import SeasonCourseOffering
             offering = SeasonCourseOffering.objects.filter(season=season, course=course).first()

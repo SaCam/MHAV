@@ -36,6 +36,11 @@
                     <p>
                         Welke cursus wil je volgen?
                     </p>
+                    <div class="mhav-registration-field">
+                        <label for="{{ form.start_preference.id_for_label }}">{{ form.start_preference.label }} *</label>
+                        {{ form.start_preference }}{{ form.start_preference.errors }}
+                        <small>Kies alleen een seizoen als je een voorkeur voor een bepaalde cursusperiode hebt.</small>
+                    </div>
                     <div class="mhav-registration-grid">
                         {% for field in form %}
                             {% if field.name == 'season' or field.name == 'course' %}

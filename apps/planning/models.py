@@ -205,6 +205,13 @@ class CourseApplication(models.Model):
     dog_birth_date = models.DateField('Geboortedatum hond', null=True, blank=True)
     dog_sex = models.CharField('Geslacht hond', max_length=12, choices=[('male','Reu'),('female','Teef')], blank=True)
     dog_notes = models.TextField('Bijzonderheden hond', blank=True)
+    class StartPreference(models.TextChoices):
+        EARLIEST = 'earliest', 'Zo snel mogelijk'
+        SPECIFIC = 'specific', 'Ik heb een voorkeur voor een bepaalde cursusperiode'
+        FLEXIBLE = 'flexible', 'Het maakt mij niet uit wanneer ik begin'
+
+    start_preference = models.CharField('Gewenste start', max_length=12, choices=StartPreference.choices, default=StartPreference.FLEXIBLE)
+    requested_season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True, blank=True, related_name='requested_applications', verbose_name='Oorspronkelijk gevraagd seizoen')
     season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True, blank=True, related_name='applications')
     course = models.ForeignKey('website.SitePage', on_delete=models.SET_NULL, null=True, blank=True, related_name='course_applications')
     experience = models.TextField('Eerdere training / niveau', blank=True)
