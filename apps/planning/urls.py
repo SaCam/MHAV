@@ -14,6 +14,7 @@ urlpatterns=[
     path('aanmeldingen/planning/actie/', views.application_plan_action, name='application_plan_action'),
     path('aanmeldingen/planning/', views.application_plan_review, name='application_plan_review'),
     path('aanmeldingen/alternatief/<str:token>/', views.application_accept_season, name='application_accept_season'),
+    path('aanmeldingen/<int:pk>/doorschuiven/', views.application_carry_forward, name='application_carry_forward'),
     path('aanmeldingen/<int:pk>/alternatief/', views.application_propose_season, name='application_propose_season'),
     path('aanmeldingen/<int:pk>/plannen/', views.application_assign, name='application_assign'),
     path('aanmeldingen/<int:pk>/afhandelen/', views.application_handle, name='application_handle'),

@@ -570,7 +570,9 @@ def application_detail(request, pk):
     groups = TrainingGroup.objects.filter(course=application.course, season__status__in=[Season.Status.DRAFT, Season.Status.ACTIVE], planning_locked_at__isnull=True, execution_status='planned').select_related('season') if application.course_id and application.season_id is None else (TrainingGroup.objects.filter(season=application.season, course=application.course, planning_locked_at__isnull=True, execution_status='planned').select_related('season') if application.season_id and application.course_id else TrainingGroup.objects.none())
     eligible = [g for _, g in compatible_groups(application, groups)]
     preferences = [{'group': g, 'preference': (application.time_preferences or {}).get(str(g.pk), '')} for g in groups.order_by('day', 'starts_at', 'pk')]
-    return render(request, 'planning/application_detail.html', {'application':application, 'form':form, 'eligible_groups':eligible, 'time_preference_rows':preferences, 'alternative_seasons': Season.objects.exclude(status=Season.Status.CLOSED).filter(course_offerings__course=application.course).distinct().order_by('starts_on'), 'combinations':Combination.objects.select_related('handler', 'dog').order_by('handler__last_name')[:300]})
+    from .season_recommendations import suitable_seasons
+    recommended_seasons = suitable_seasons(application)
+    return render(request, 'planning/application_detail.html', {'application':application, 'form':form, 'eligible_groups':eligible, 'time_preference_rows':preferences, 'recommended_seasons': recommended_seasons, 'alternative_seasons': Season.objects.exclude(status=Season.Status.CLOSED).filter(course_offerings__course=application.course).distinct().order_by('starts_on'), 'combinations':Combination.objects.select_related('handler', 'dog').order_by('handler__last_name')[:300]})
 
 
 def is_trainer(user):
@@ -990,6 +992,37 @@ def application_plan_review(request):
         'action_groups': TrainingGroup.objects.select_related('season').order_by('season__starts_on', 'name'),
     })
 
+
+
+@require_POST
+@user_passes_test(is_planner, login_url='accounts:login')
+def application_carry_forward(request, pk):
+    """Administrator-triggered carry-forward; never confirms a placement."""
+    from django.db import transaction
+    from .season_recommendations import suitable_seasons
+    with transaction.atomic():
+        application = get_object_or_404(
+            CourseApplication.objects.select_for_update(), pk=pk)
+        # Recompute recommendations under the transaction. No user-supplied
+        # season ID is trusted, and explicit preferences cannot be overridden.
+        choices = suitable_seasons(application)
+        if not choices:
+            messages.error(request, 'Geen geschikt seizoen met vrije plaatsen gevonden, of de aanvraag is niet verplaatsbaar.')
+            return redirect('planning:application_detail', pk=pk)
+        target = choices[0]['season']
+        if application.season_id == target.pk:
+            messages.info(request, 'De aanvraag staat al bij het eerstvolgende geschikte seizoen.')
+            return redirect('planning:application_detail', pk=pk)
+        application.season = target
+        application.proposed_group = None
+        application.alternative_season = None
+        application.alternative_proposed_at = None
+        application.alternative_accepted_at = None
+        application.save(update_fields=[
+            'season', 'proposed_group', 'alternative_season',
+            'alternative_proposed_at', 'alternative_accepted_at', 'updated_at'])
+    messages.success(request, 'Aanvraag doorgeschoven naar het eerstvolgende geschikte seizoen. Een plaats is nog niet bevestigd.')
+    return redirect('planning:application_detail', pk=pk)
 
 @require_POST
 @user_passes_test(is_planner, login_url='accounts:login')

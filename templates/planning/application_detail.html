@@ -112,6 +112,22 @@
                 {% if application.alternative_season %}
                   <p><strong>Voorgesteld alternatief:</strong> {{ application.alternative_season }} — {% if application.alternative_accepted_at %}Geaccepteerd op {{ application.alternative_accepted_at|date:'d-m-Y H:i' }}{% else %}Wacht op akkoord{% endif %}</p>
                 {% endif %}
+                {% if recommended_seasons %}
+                  <div class="mhav-admin-panel">
+                    <h3>Beschikbare volgende cursusperioden</h3>
+                    <p>Indicatieve capaciteit, inclusief bestaande plaatsingen en conceptindelingen.</p>
+                    <ul>
+                      {% for option in recommended_seasons %}
+                        <li>{{ option.season.name }} — {{ option.available }} vrije plaats{{ option.available|pluralize:"en" }}</li>
+                      {% endfor %}
+                    </ul>
+                    <form method="post" action="{% url 'planning:application_carry_forward' application.pk %}">
+                      {% csrf_token %}
+                      <button class="button button-outline" type="submit">Doorschuiven naar eerstvolgende geschikte seizoen</button>
+                    </form>
+                    <small>Dit wijzigt alleen het gekoppelde seizoen; er wordt geen lesgroep of definitieve plaats toegewezen.</small>
+                  </div>
+                {% endif %}
                 {% if not application.linked_enrollment_id %}
                   <form method="post" action="{% url 'planning:application_propose_season' application.pk %}">
                     {% csrf_token %}
