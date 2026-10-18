@@ -289,6 +289,10 @@ def public_application(request, on_behalf=False):
                     application.submitted_by = request.user
                 if request.user.is_authenticated and not on_behalf:
                     application.user = request.user
+                if not on_behalf and request.user.is_authenticated:
+                    selected_dog = form.cleaned_data.get('existing_dog')
+                    if selected_dog:
+                        application.dog_profile = selected_dog
                 application.save()
                 if application.user_id:
                     from apps.accounts.dog_profiles import ensure_application_dog

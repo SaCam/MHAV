@@ -77,6 +77,7 @@
                 <details class="mhav-review-section mhav-review-details"><summary>Contactgegevens en hondgegevens bekijken</summary>
                   <p><strong>Contact:</strong> {{ application.email }} · {{ application.phone }}</p>
                   <p>{{ application.street }} {{ application.house_number }}, {{ application.postal_code }} {{ application.city }}</p>
+                  <p><strong>Tweede geleider:</strong> {{ application.second_handler_name|default:'Niet opgegeven' }}</p>
                   <p><strong>Hond:</strong> {{ application.dog_name }} · {{ application.dog_breed }} · {{ application.get_dog_sex_display|default:'Geslacht niet ingevuld' }}</p>
                   <p><strong>Geboortedatum:</strong> {{ application.dog_birth_date|date:'d-m-Y'|default:'Niet ingevuld' }}</p>
                   <p><strong>Bijzonderheden:</strong> {{ application.dog_notes|default:'Geen'|linebreaksbr }}</p>

@@ -74,6 +74,14 @@
                 </fieldset>
                 <fieldset>
                     <legend>3. Gegevens hond</legend>
+                    {% if form.existing_dog %}
+                        <div class="mhav-registration-field">
+                            <label for="{{ form.existing_dog.id_for_label }}">{{ form.existing_dog.label }}</label>
+                            {{ form.existing_dog }}{{ form.existing_dog.errors }}
+                            <small>{{ form.existing_dog.help_text }}</small>
+                        </div>
+                        <p>Als je een bestaande hond kiest, gebruiken we de gegevens uit het hondenprofiel. Je hoeft geen nieuw profiel aan te maken.</p>
+                    {% endif %}
                     <div class="mhav-registration-grid">
                         {% for field in form %}
                             {% if field.name == 'dog_name' or field.name == 'dog_breed' or field.name == 'dog_birth_date' or field.name == 'dog_sex' or field.name == 'dog_origin' or field.name == 'dog_pedigree' or field.name == 'dog_notes' %}
@@ -90,6 +98,14 @@
                                 </div>
                             {% endif %}
                         {% endfor %}
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Tweede geleider (optioneel)</legend>
+                    <p>Kan iemand anders met dezelfde hond komen als de hoofdgeleider verhinderd is? Vermeld dan de naam van die persoon. De hoofdgeleider blijft verantwoordelijk voor de aanmelding.</p>
+                    <div class="mhav-registration-field">
+                        <label for="{{ form.second_handler_name.id_for_label }}">{{ form.second_handler_name.label }}</label>
+                        {{ form.second_handler_name }}{{ form.second_handler_name.errors }}
                     </div>
                 </fieldset>
                 <fieldset>

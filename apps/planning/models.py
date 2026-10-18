@@ -208,6 +208,7 @@ class CourseApplication(models.Model):
     remarks = models.TextField('Overige opmerkingen', blank=True)
     privacy_accepted_at = models.DateTimeField('Privacyverklaring akkoord op')
     admin_notes = models.TextField('Interne opmerkingen', blank=True)
+    second_handler_name = models.CharField('Tweede geleider (naam)', max_length=200, blank=True)
     dog_profile = models.ForeignKey(Dog, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_applications')
     linked_combination = models.ForeignKey(Combination, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_applications')
     linked_enrollment = models.ForeignKey(Enrollment, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_applications')

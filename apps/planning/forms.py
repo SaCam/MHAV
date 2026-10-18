@@ -122,11 +122,12 @@ class EnrollmentForm(StyledForm):
 class CourseApplicationForm(StyledForm):
     privacy_agreement = forms.BooleanField(label='Ik heb de privacyverklaring gelezen en ga akkoord met de verwerking van mijn gegevens voor deze inschrijving.')
     website = forms.CharField(required=False, widget=forms.HiddenInput)  # Honeypot
+    existing_dog = forms.ModelChoiceField(queryset=Dog.objects.none(), required=False, label='Mijn bestaande hond', empty_label='Nieuwe hond aanmelden', help_text='Kies een hond uit je Mijn MHAV-profiel, of laat dit leeg voor een nieuwe hond.')
 
     class Meta:
         model = CourseApplication
         fields = ('first_name','middle_name','last_name','email','phone','street','house_number','postal_code','city','country',
-                  'dog_name','dog_breed','dog_birth_date','dog_sex','dog_origin','dog_pedigree','dog_notes','season','course',
+                  'dog_name','dog_breed','dog_birth_date','dog_sex','dog_origin','dog_pedigree','dog_notes','second_handler_name','season','course',
                   'dog_count','first_dog','trained_before','experience','availability','remarks')
         widgets = {
             'dog_notes': forms.Textarea(attrs={'rows':3}),
@@ -151,6 +152,10 @@ class CourseApplicationForm(StyledForm):
                 self.fields[name].initial = value
                 self.initial[name] = value
                 self.fields[name].disabled = True
+        if self.applicant_user is not None and self.applicant_user.is_authenticated:
+            self.fields['existing_dog'].queryset = Dog.objects.filter(combinations__handler=self.applicant_user).distinct().order_by('name', 'pk')
+        else:
+            self.fields.pop('existing_dog')
         from apps.website.models import SitePage
         from apps.website.views import TRAINING_SLUGS
         from .models import SeasonCourseOffering
@@ -163,6 +168,7 @@ class CourseApplicationForm(StyledForm):
         ).exclude(slug='phv-knpv').order_by('menu_order', 'title')
         self.fields['course'].required = True
         self.fields['course'].empty_label = 'Kies een cursus'
+        self.fields['dog_name'].required = False
         self.fields['dog_birth_date'].required = False
         self.fields['dog_birth_date'].help_text = 'Als de geboortedatum niet bekend is, mag dit leeg blijven.'
         self.fields['dog_breed'].required = False
@@ -175,6 +181,14 @@ class CourseApplicationForm(StyledForm):
         if self.applicant_user is not None and self.applicant_user.is_authenticated:
             if not (self.applicant_user.first_name.strip() and self.applicant_user.last_name.strip() and self.applicant_user.email.strip()):
                 raise forms.ValidationError('Vul eerst je voornaam, achternaam en e-mailadres aan in je MHAV-account voordat je je aanmeldt.')
+        dog = data.get('existing_dog')
+        if not dog and not (data.get('dog_name') or '').strip():
+            self.add_error('dog_name', 'Vul de naam van de hond in of kies een bestaande hond.')
+        if dog:
+            # Never trust posted dog identity fields when an existing profile is selected.
+            data['dog_name'] = dog.name
+            data['dog_breed'] = dog.breed
+            data['dog_birth_date'] = dog.date_of_birth
         season, course = data.get('season'), data.get('course')
         if season and course:
             from .models import SeasonCourseOffering
