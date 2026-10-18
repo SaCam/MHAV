@@ -233,7 +233,7 @@ class CourseApplicationForm(StyledForm):
 class ApplicationReviewForm(StyledForm):
     class Meta:
         model = CourseApplication
-        fields = ('status','admin_notes')
+        fields = ('admin_notes',)
         widgets = {'admin_notes': forms.Textarea(attrs={'rows':4})}
 
 

@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, execution_views
+from . import views, execution_views, payment_views
 app_name='planning'
 urlpatterns=[
     path('uitvoering/', execution_views.execution_list, name='execution_list'),
@@ -16,10 +16,10 @@ urlpatterns=[
     path('aanmeldingen/alternatief/<str:token>/', views.application_accept_season, name='application_accept_season'),
     path('aanmeldingen/<int:pk>/doorschuiven/', views.application_carry_forward, name='application_carry_forward'),
     path('aanmeldingen/<int:pk>/alternatief/', views.application_propose_season, name='application_propose_season'),
+    path('aanmeldingen/<int:pk>/betaling/', payment_views.payment_action, name='application_payment'),
     path('aanmeldingen/<int:pk>/plannen/', views.application_assign, name='application_assign'),
     path('aanmeldingen/<int:pk>/afhandelen/', views.application_handle, name='application_handle'),
     path('aanmeldingen/<int:pk>/bevestigen/', views.application_confirm, name='application_confirm'),
-    path('aanmeldingen/<int:pk>/combinatie/', views.application_link_combination, name='application_link_combination'),
     path('aanmeldingen/<int:pk>/identiteit-verifieren/', views.application_verify_identity, name='application_verify_identity'),
     path('aanmeldingen/<int:pk>/', views.application_detail, name='application_detail'),
     path('cursusaanbod/', views.catalogue, name='catalogue'),

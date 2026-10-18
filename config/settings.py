@@ -181,3 +181,6 @@ AUTHENTICATION_BACKENDS = [
     "apps.accounts.backends.EmailBackend",
 ]
 
+
+# Optional mailbox for confirmed applications and declined admin invitations.
+MHAV_REGISTRATION_NOTIFICATION_EMAIL = os.getenv("MHAV_REGISTRATION_NOTIFICATION_EMAIL", "")

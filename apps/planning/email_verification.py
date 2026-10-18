@@ -67,6 +67,8 @@ def verify_application_email(request, token):
                     app.participant_declined_at = timezone.now()
                     app.status = CourseApplication.Status.DECLINED
                     app.save(update_fields=['participant_declined_at', 'status', 'updated_at'])
+                    from .notifications import participant_declined
+                    participant_declined(app)
             else:
                 now = timezone.now()
                 app.email_verified_at = app.email_verified_at or now
@@ -74,6 +76,8 @@ def verify_application_email(request, token):
                 if app.status == CourseApplication.Status.PENDING_CONFIRMATION:
                     app.status = CourseApplication.Status.NEW
                 app.save(update_fields=['email_verified_at', 'participant_confirmed_at', 'status', 'updated_at'])
+                from .notifications import participant_confirmed
+                participant_confirmed(app)
             if action == 'confirm' and app.participant_confirmed_at and request.POST.get('create_account') == 'on':
                 # Reuse the existing account-claim handler; it enforces account
                 # ownership and password validation. Never auto-link by email.

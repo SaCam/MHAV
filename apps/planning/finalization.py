@@ -52,7 +52,7 @@ def resolve_identity(app, *, create=False):
         return user, None, None, 'Geselecteerde hond hoort niet bij dit account'
     if app.linked_combination_id:
         combo = app.linked_combination
-        if user and combo.handler_id != user.pk:
+        if not user or combo.handler_id != user.pk:
             return user, None, None, 'Gekoppelde combinatie hoort bij ander account'
         dog = combo.dog
     elif app.dog_profile_id and user:

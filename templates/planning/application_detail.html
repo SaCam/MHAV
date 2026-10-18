@@ -1,156 +1,214 @@
 {% extends 'base.html' %}
-{% block title %}
-    Aanmelding {{ application.pk }} | MHAV
-{% endblock %}
+{% block title %}Aanmelding #{{ application.pk }} | MHAV{% endblock %}
 {% block extra_css %}
-    <link rel="stylesheet" href="/static/css/mhav-beheer.css"><link rel="stylesheet" href="/static/css/mhav-registration.css"><link rel="stylesheet" href="/static/css/mhav-planning-clarity.css">
+<link rel="stylesheet" href="/static/css/mhav-beheer.css">
+<link rel="stylesheet" href="/static/css/mhav-registration.css">
+<style>
+.mhav-application-detail{max-width:1040px;margin:0 auto;display:grid;gap:1.4rem}
+.mhav-app-card{border:1px solid var(--border-color,#d8dedb);border-radius:16px;background:var(--surface,#fff);padding:clamp(1.1rem,3vw,2rem)}
+.mhav-app-card h2{margin:0 0 1rem}.mhav-app-card h3{margin:1.25rem 0 .4rem}
+.mhav-app-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem 1.6rem}
+.mhav-app-fact{display:grid;gap:.15rem}.mhav-app-fact small{opacity:.75}
+.mhav-app-actions{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center;margin-top:.75rem}
+.mhav-app-actions form{margin:0}.mhav-app-note{padding:.8rem 1rem;border-radius:9px;background:rgba(99,121,130,.10);margin:.75rem 0}
+.mhav-app-warning{border-left:4px solid #b7791f;padding:.8rem 1rem;background:rgba(183,121,31,.09);margin:.75rem 0}
+.mhav-app-card label{display:block;margin:.8rem 0 .3rem}.mhav-app-card select,.mhav-app-card textarea,.mhav-app-card input:not([type=checkbox]){max-width:100%;width:100%}
+.mhav-app-card .button{white-space:normal}.mhav-app-card details{margin-top:1rem}.mhav-app-card summary{cursor:pointer;font-weight:600}
+.mhav-placement-overview{background:rgba(95,135,115,.065);border:1px solid var(--border-color,#d8dedb);border-radius:12px;padding:1.15rem;margin:1rem 0 1.4rem}
+.mhav-placement-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.mhav-placement-top h3{margin:.25rem 0}.mhav-placement-top small{opacity:.75}
+.mhav-state{display:inline-block;border-radius:999px;padding:.35rem .8rem;background:#e8ebeb;font-weight:700;font-size:.85rem}
+.mhav-state-good{background:#deefe3;color:#1c5739}.mhav-state-pending{background:#fff0cc;color:#6f4d00}
+.mhav-app-subtitle{opacity:.8}.mhav-checkbox-line{display:flex!important;align-items:center;gap:.6rem}
+.mhav-secondary-action{padding:1rem;border:1px solid var(--border-color,#d8dedb);border-radius:10px}
+@media(max-width:600px){.mhav-placement-top{display:block}.mhav-state{margin-top:.7rem}}
+</style>
 {% endblock %}
 {% block content %}
-    <section class="page-intro">
-        <div class="container">
-            <a href="{% url 'planning:application_list' %}">← Inschrijfaanvragen</a>
-            <h1>
-                {{ application.first_name }} {{ application.last_name }}
-            </h1>
-            <p>
-                Ontvangen {{ application.created_at|date:'d-m-Y H:i' }} · {{ application.get_status_display }}
-            </p>
-        </div>
-    </section>
-    <section class="section">
-        <div class="container mhav-registration-wrap">
-            <div class="mhav-registration">
-                <div class="mhav-review-section mhav-review-highlight">
-                  <span class="mhav-review-eyebrow">Aanmelding #{{ application.pk }} · {{ application.get_status_display }}</span>
-                  <h2>{{ application.first_name }} {{ application.last_name }} · {{ application.dog_name }}</h2>
-                  <p><strong>{{ application.course.title|default:'Geen cursus' }}</strong> · {{ application.season.name|default:'Open aanmelding' }}</p>
-                  <p>{% if application.proposed_group %}<strong>Huidige conceptplaatsing:</strong> {{ application.proposed_group.name }} · {{ application.proposed_group.get_day_display }} {{ application.proposed_group.starts_at|time:'H:i' }}{% else %}Nog geen conceptplaatsing{% endif %}</p>
-                </div>
-                <div class="mhav-review-section">
-                  <h2>1. Cursuswensen en beschikbaarheid</h2>
-                  <p><strong>Aangevraagde cursus:</strong> {{ application.course.title|default:'Niet beschikbaar' }} · <strong>Seizoen:</strong> {{ application.season.name|default:'Geen voorkeur' }}</p>
-                  <p><strong>Opgegeven beschikbaarheid:</strong> {{ application.availability|default:'Niet opgegeven'|linebreaksbr }}</p>
-                  {% if time_preference_rows %}
-                  <div class="mhav-preference-list">
-                    {% for row in time_preference_rows %}
-                    <div class="mhav-preference-item"><span>{{ row.group.get_day_display }} {{ row.group.starts_at|time:'H:i' }} · {{ row.group.name }}</span>
-                    <strong>{% if row.preference == 'preferred' %}★ Voorkeur{% elif row.preference == 'ok' %}Kan wel{% elif row.preference == 'unavailable' %}Kan niet{% else %}Niet opgegeven{% endif %}</strong></div>
-                    {% endfor %}
-                  </div>{% else %}<p>Er zijn momenteel geen lesgroepen om beschikbaarheid per lesmoment te tonen.</p>{% endif %}
-                  <p><strong>Ervaring:</strong> {{ application.experience|default:'Niet opgegeven'|linebreaksbr }}</p>
-                  <p><strong>Opmerkingen:</strong> {{ application.remarks|default:'Geen'|linebreaksbr }}</p>
-                </div>
-                <div class="mhav-plan-detail">
-                  <h2>2. Voorlopige lesgroep kiezen</h2>
-                  <p>Een conceptplaatsing is nog niet verwerkt. Alleen door de aanvrager opgegeven beschikbare tijden zijn selecteerbaar.</p>
-                  {% if application.linked_enrollment_id %}
-                    <p><strong>Verwerkt:</strong> {{ application.linked_enrollment.group.name }}</p>
-                  {% else %}
-                    <form method="post" action="{% url 'planning:application_assign' application.pk %}">
-                      {% csrf_token %}
-                      <label for="group-select">Voorlopige lesgroep</label>
-                      <select name="group" id="group-select">
-                        <option value="">Niet voorlopig plannen</option>
-                        {% for group in eligible_groups %}
-                          <option value="{{ group.pk }}" {% if application.proposed_group_id == group.pk %}selected{% endif %}>{{ group.season.name }} · {{ group.name }} · {{ group.get_day_display }} {{ group.starts_at|time:'H:i' }}</option>
-                        {% endfor %}
-                      </select>
-                      <label class="mhav-capacity-exception"><input type="checkbox" name="capacity_override" value="yes"> Sta plaatsing boven de groepscapaciteit toe (alleen beheerder; wordt geregistreerd)</label><button class="button button-primary" type="submit">Conceptplaatsing opslaan</button>
-                    </form>
-                    {% if not eligible_groups %}<p>Geen beschikbare, niet-vergrendelde lesgroepen voor deze cursus gevonden.</p>{% endif %}
-                    <h3>3. Geleider-hondcombinatie</h3>
-                    <p>{% if application.linked_combination %}Gekoppeld: {{ application.linked_combination }}{% else %}Nog niet gekoppeld. Maak indien nodig eerst een combinatie aan via Cursusadministratie.{% endif %}</p>
-                    <form method="post" action="{% url 'planning:application_link_combination' application.pk %}">
-                      {% csrf_token %}
-                      <label for="combination-select">Bestaande combinatie</label>
-                      <select id="combination-select" name="combination" required>
-                        <option value="">Kies combinatie</option>
-                        {% for combination in combinations %}<option value="{{ combination.pk }}" {% if application.linked_combination_id == combination.pk %}selected{% endif %}>{{ combination }}</option>{% endfor %}
-                      </select>
-                      <button class="button button-outline" type="submit">Combinatie koppelen</button>
-                    </form>
-                    {% if application.proposed_group_id and application.linked_combination_id %}
-                      <form method="post" action="{% url 'planning:application_confirm' application.pk %}">{% csrf_token %}<button class="button button-primary" type="submit">Bevestig plaatsing & verwerk</button></form>
-                    {% endif %}
-                  {% endif %}
-                </div>
-                <details class="mhav-review-section mhav-review-details"><summary>Contactgegevens en hondgegevens bekijken</summary>
-                  <p><strong>Contact:</strong> {{ application.email }} · {{ application.phone }}</p>
-                  <p>{{ application.street }} {{ application.house_number }}, {{ application.postal_code }} {{ application.city }}</p>
-                  <p><strong>Tweede geleider:</strong> {{ application.second_handler_name|default:'Niet opgegeven' }}</p>
-                  <p><strong>Hond:</strong> {{ application.dog_name }} · {{ application.dog_breed }} · {{ application.get_dog_sex_display|default:'Geslacht niet ingevuld' }}</p>
-                  <p><strong>Geboortedatum:</strong> {{ application.dog_birth_date|date:'d-m-Y'|default:'Niet ingevuld' }}</p>
-                  <p><strong>Bijzonderheden:</strong> {{ application.dog_notes|default:'Geen'|linebreaksbr }}</p>
-                  <p><small>Privacyakkoord: {{ application.privacy_accepted_at|date:'d-m-Y H:i' }}</small></p>
-                </details>
-                <h3>Identiteit en MHAV-account</h3>
-                {% if application.user_id %}
-                  <p>Gekoppeld account: {{ application.user.get_full_name }} ({{ application.user.email }})</p>
-                  <p><strong>Bevestiging cursist:</strong> {% if application.participant_confirmed_at %}Bevestigd op {{ application.participant_confirmed_at|date:'d-m-Y H:i' }}{% elif application.status == 'declined' %}Afgewezen{% elif application.status == 'pending_confirmation' %}Wacht op bevestiging{% else %}Nog niet bevestigd{% endif %}</p>
-                  <p><strong>E-mail bevestigd:</strong> {% if application.email_verified_at %}Ja, op {{ application.email_verified_at|date:'d-m-Y H:i' }}{% else %}Nee — {% if application.confirmation_email_status == 'sent' %}verzonden{% else %}{{ application.get_confirmation_email_status_display }}{% endif %}{% endif %}</p>
-                  {% if application.identity_verified_at %}<p>Handmatig gecontroleerd op {{ application.identity_verified_at|date:'d-m-Y H:i' }} door {{ application.identity_verified_by }}.</p>{% endif %}
-                {% elif not application.linked_enrollment_id %}
-                  <p>Alleen een gelijk e-mailadres is geen bewijs van identiteit. Controleer de cursist via een onafhankelijk kanaal voordat je een bestaand account koppelt.</p>
-                  <form method="post" action="{% url 'planning:application_verify_identity' application.pk %}">
-                    {% csrf_token %}
-                    <label for="account-id">Account-ID (controleer in gebruikersbeheer)</label>
-                    <input id="account-id" name="account_id" type="number" min="1" required>
-                    <label for="verification-method">Hoe is de identiteit gecontroleerd?</label>
-                    <select id="verification-method" name="verification_method" required>
-                      <option value="">Kies methode</option>
-                      <option value="in_person">Persoonlijk gecontroleerd</option>
-                      <option value="video_call">Videogesprek</option>
-                      <option value="authenticated_contact">Gecontroleerd contactkanaal</option>
-                    </select>
-                    <label for="verification-reference">Controle / referentie (geen kopie identiteitsbewijs)</label>
-                    <textarea id="verification-reference" name="verification_reference" maxlength="500" required></textarea>
-                    <button class="button button-outline" type="submit">Identiteit bevestigd: account koppelen</button>
-                  </form>
-                {% endif %}
-                <h3>Seizoensvoorkeur en alternatief</h3>
-                <p><strong>Startvoorkeur:</strong> {{ application.get_start_preference_display }}</p>
-                <p><strong>Oorspronkelijk seizoen:</strong> {{ application.requested_season|default:'Geen specifieke voorkeur' }}</p>
-                <p><strong>Huidige seizoen:</strong> {{ application.season|default:'Nog niet toegewezen' }}</p>
-                {% if application.alternative_season %}
-                  <p><strong>Voorgesteld alternatief:</strong> {{ application.alternative_season }} — {% if application.alternative_accepted_at %}Geaccepteerd op {{ application.alternative_accepted_at|date:'d-m-Y H:i' }}{% else %}Wacht op akkoord{% endif %}</p>
-                {% endif %}
-                {% if recommended_seasons %}
-                  <div class="mhav-admin-panel">
-                    <h3>Beschikbare volgende cursusperioden</h3>
-                    <p>Indicatieve capaciteit, inclusief bestaande plaatsingen en conceptindelingen.</p>
-                    <ul>
-                      {% for option in recommended_seasons %}
-                        <li>{{ option.season.name }} — {{ option.available }} vrije plaats{{ option.available|pluralize:"en" }}</li>
-                      {% endfor %}
-                    </ul>
-                    <form method="post" action="{% url 'planning:application_carry_forward' application.pk %}">
-                      {% csrf_token %}
-                      <button class="button button-outline" type="submit">Doorschuiven naar eerstvolgende geschikte seizoen</button>
-                    </form>
-                    <small>Dit wijzigt alleen het gekoppelde seizoen; er wordt geen lesgroep of definitieve plaats toegewezen.</small>
-                  </div>
-                {% endif %}
-                {% if not application.linked_enrollment_id %}
-                  <form method="post" action="{% url 'planning:application_propose_season' application.pk %}">
-                    {% csrf_token %}
-                    <label for="alternative-season">Ander seizoen voorstellen of toewijzen</label>
-                    <select name="season" id="alternative-season" required>
-                      <option value="">Kies een seizoen</option>
-                      {% for season in alternative_seasons %}<option value="{{ season.pk }}">{{ season.name }}</option>{% endfor %}
-                    </select>
-                    <p><small>Bij een specifieke seizoensvoorkeur wordt een akkoordverzoek per e-mail gestuurd. Bij flexibele voorkeuren wordt het seizoen direct aangepast.</small></p>
-                    <button class="button button-outline" type="submit">Seizoen voorstellen / aanpassen</button>
-                  </form>
-                {% endif %}
-                <h2>4. Beheer</h2>
-                <form method="post">
-                    {% csrf_token %}
-                    {{ form.as_p }}<button class="button button-primary" type="submit">Wijzigingen opslaan</button>
-                </form>
-                <p>
-                    <small>Deze aanvraag is nog geen plaatsing. Koppel de combinatie en lesgroep later via Cursusindeling.</small>
-                </p>
-            </div>
-        </div>
-    </section>
+<section class="page-intro"><div class="container">
+<a href="{% url 'planning:application_list' %}">← Terug naar inschrijfaanvragen</a>
+<h1>Aanmelding #{{ application.pk }}</h1>
+<p>{{ application.first_name }} {{ application.last_name }} · {{ application.dog_name }} · <strong>{{ application.get_status_display }}</strong></p>
+</div></section>
+<section class="section"><div class="container"><div class="mhav-application-detail">
+
+<section class="mhav-app-card" aria-labelledby="applicant-heading">
+<h2 id="applicant-heading">1. Gegevens aanvrager</h2>
+<div class="mhav-app-grid">
+<div class="mhav-app-fact"><small>Naam</small><strong>{{ application.first_name }} {{ application.middle_name }} {{ application.last_name }}</strong></div>
+<div class="mhav-app-fact"><small>E-mail</small><strong><a href="mailto:{{ application.email }}">{{ application.email }}</a></strong></div>
+<div class="mhav-app-fact"><small>Telefoon</small><strong>{{ application.phone|default:'Niet opgegeven' }}</strong></div>
+<div class="mhav-app-fact"><small>Hond</small><strong>{{ application.dog_name }} · {{ application.dog_breed }}</strong></div>
+<div class="mhav-app-fact"><small>Bevestiging cursist</small><strong>{% if application.participant_confirmed_at %}Bevestigd {{ application.participant_confirmed_at|date:'d-m-Y H:i' }}{% elif application.status == 'declined' %}Afgewezen{% else %}Nog niet bevestigd{% endif %}</strong></div>
+<div class="mhav-app-fact"><small>E-mailadres</small><strong>{% if application.email_verified_at %}Geverifieerd{% else %}Nog niet geverifieerd{% endif %}</strong></div>
+<div class="mhav-app-fact"><small>Mijn MHAV-account</small><strong>{% if application.user_id %}Gekoppeld{% else %}Niet gekoppeld (niet verplicht){% endif %}</strong></div>
+<div class="mhav-app-fact"><small>Ingediend door</small><strong>{{ application.get_submission_source_display }}</strong></div>
+</div>
+<details><summary>Meer contact- en hondgegevens</summary>
+<p>{{ application.street }} {{ application.house_number }}, {{ application.postal_code }} {{ application.city }}</p>
+<p><strong>Tweede geleider:</strong> {{ application.second_handler_name|default:'Niet opgegeven' }}</p>
+<p><strong>Hond:</strong> {{ application.get_dog_sex_display|default:'Niet opgegeven' }} · Geboren {{ application.dog_birth_date|date:'d-m-Y'|default:'Onbekend' }}</p>
+<p><strong>Bijzonderheden:</strong> {{ application.dog_notes|default:'Geen'|linebreaksbr }}</p>
+<p><strong>Privacyakkoord:</strong> {{ application.privacy_accepted_at|date:'d-m-Y H:i'|default:'Onbekend' }}</p>
+</details>
+{% if not application.user_id and not application.linked_enrollment_id %}
+<details><summary>Bestaand account handmatig koppelen (uitzondering)</summary>
+<p>Een overeenkomend e-mailadres is niet voldoende om een bestaand account te koppelen. Controleer de identiteit onafhankelijk.</p>
+<form method="post" action="{% url 'planning:application_verify_identity' application.pk %}">{% csrf_token %}
+<label for="account-id">Account-ID</label><input id="account-id" name="account_id" type="number" min="1" required>
+<label for="verification-method">Controlemethode</label><select id="verification-method" name="verification_method" required><option value="">Kies methode</option><option value="in_person">Persoonlijk gecontroleerd</option><option value="video_call">Videogesprek</option><option value="authenticated_contact">Gecontroleerd contactkanaal</option></select>
+<label for="verification-reference">Controle / referentie</label><textarea id="verification-reference" name="verification_reference" maxlength="500" required></textarea>
+<button class="button button-outline" type="submit">Gecontroleerd account koppelen</button>
+</form></details>{% endif %}
+</section>
+
+<section class="mhav-app-card" aria-labelledby="application-heading">
+<h2 id="application-heading">2. Gegevens aanmelding</h2>
+<div class="mhav-app-grid">
+<div class="mhav-app-fact"><small>Cursus</small><strong>{{ application.course.title|default:'Nog niet gekozen' }}</strong></div>
+<div class="mhav-app-fact"><small>Gewenste start</small><strong>{{ application.get_start_preference_display }}</strong></div>
+<div class="mhav-app-fact"><small>Oorspronkelijk seizoen</small><strong>{{ application.requested_season|default:'Geen specifieke voorkeur' }}</strong></div>
+<div class="mhav-app-fact"><small>Huidig seizoen</small><strong>{{ application.season|default:'Nog niet toegewezen' }}</strong></div>
+<div class="mhav-app-fact"><small>Ingediend op</small><strong>{{ application.created_at|date:'d-m-Y H:i' }}</strong></div>
+<div class="mhav-app-fact"><small>Status</small><strong>{{ application.get_status_display }}</strong></div>
+</div>
+<p><strong>Beschikbaarheid:</strong> {{ application.availability|default:'Niet opgegeven'|linebreaksbr }}</p>
+{% if time_preference_rows %}<details><summary>Opgegeven lesmomenten</summary><ul>{% for row in time_preference_rows %}<li>{{ row.group.get_day_display }} {{ row.group.starts_at|time:'H:i' }} · {{ row.group.name }} — {% if row.preference == 'preferred' %}Voorkeur{% elif row.preference == 'ok' %}Beschikbaar{% elif row.preference == 'unavailable' %}Niet beschikbaar{% else %}Geen voorkeur opgegeven{% endif %}</li>{% endfor %}</ul></details>{% endif %}
+<p><strong>Ervaring:</strong> {{ application.experience|default:'Niet opgegeven'|linebreaksbr }}</p>
+<p><strong>Opmerkingen:</strong> {{ application.remarks|default:'Geen'|linebreaksbr }}</p>
+{% if application.alternative_season %}<div class="mhav-app-note">Alternatief seizoen: <strong>{{ application.alternative_season }}</strong> — {% if application.alternative_accepted_at %}geaccepteerd{% else %}wacht op akkoord cursist{% endif %}.</div>{% endif %}
+</section>
+
+<section class="mhav-app-card mhav-placement-card" aria-labelledby="planning-heading">
+<h2 id="planning-heading">3. Cursusindeling</h2>
+<p class="mhav-app-subtitle">Hier zie je de werkelijke indeling van deze aanmelding en wat je nu kunt doen.</p>
+
+<div class="mhav-placement-overview">
+  <div class="mhav-placement-top">
+    <div><small>Huidige indeling</small><h3>{{ application.course.title|default:'Cursus nog niet gekozen' }}</h3></div>
+    {% if placement_state == 'definitief' %}<span class="mhav-state mhav-state-good">Definitief geplaatst</span>
+    {% elif placement_state == 'concept' %}<span class="mhav-state mhav-state-pending">Conceptplaatsing</span>
+    {% elif placement_state == 'wachtlijst' %}<span class="mhav-state mhav-state-pending">Wachtlijst</span>
+    {% else %}<span class="mhav-state">Niet ingedeeld</span>{% endif %}
+  </div>
+  <div class="mhav-app-grid">
+    <div class="mhav-app-fact"><small>Geleider</small><strong>{{ application.first_name }} {{ application.last_name }}</strong></div>
+    <div class="mhav-app-fact"><small>Hond</small><strong>{{ application.dog_name }}</strong></div>
+    <div class="mhav-app-fact"><small>Seizoen</small><strong>{% if placement_group %}{{ placement_group.season.name }}{% else %}{{ application.season.name|default:'Nog niet toegewezen' }}{% endif %}</strong></div>
+    <div class="mhav-app-fact"><small>Lesgroep</small><strong>{% if placement_group %}{{ placement_group.name }} — {{ placement_group.get_day_display }} {{ placement_group.starts_at|time:'H:i' }}{% else %}Nog geen lesgroep{% endif %}</strong></div>
+    <div class="mhav-app-fact"><small>Groepsplanning</small><strong>{% if placement_group %}{% if placement_group_approved %}Goedgekeurd{% else %}Concept / nog niet goedgekeurd{% endif %}{% else %}Niet van toepassing{% endif %}</strong></div>
+    <div class="mhav-app-fact"><small>Aanmeldstatus</small><strong>{{ application.get_status_display }}</strong></div>
+  </div>
+  {% if placement_state == 'concept' %}
+  <div class="mhav-app-note">Deze cursist staat al als <strong>concept</strong> in Groepsindeling. De plaatsing is nog niet definitief en er is nog geen plaatsingsmail verzonden.</div>
+  {% elif placement_state == 'definitief' %}
+  <div class="mhav-app-note">De cursist is definitief ingeschreven. Wijzigingen aan een definitieve inschrijving moeten via het beheer van de lesgroep gebeuren; het formulier hieronder maakt geen tweede plaatsing aan.</div>
+  {% elif placement_state == 'wachtlijst' %}
+  <div class="mhav-app-note">De aanmelding staat op de wachtlijst. Gebruik Statusbeheer om deze eerst te heropenen voordat je een lesgroep kiest.</div>
+  {% endif %}
+</div>
+
+{% if application.status == 'pending_confirmation' or application.status == 'declined' %}
+<div class="mhav-app-warning">De cursist heeft deze aanmelding nog niet bevestigd of heeft deze afgewezen. Indelen is geblokkeerd.</div>
+{% endif %}
+
+{% if placement_state == 'definitief' %}
+<h3>Vervolgactie</h3>
+<p>De definitieve lesgroep staat hierboven. Open de lesgroep voor het beheer van deelnemers en de cursusuitvoering.</p>
+{% if placement_group %}<a class="button button-outline" href="{% url 'planning:group_detail' placement_group.pk %}">Lesgroep bekijken</a>{% endif %}
+{% else %}
+{% if can_change_draft %}
+<h3>{% if placement_state == 'concept' %}Conceptindeling wijzigen{% else %}Lesgroep kiezen{% endif %}</h3>
+<p>Je kunt handmatig elke open lesgroep kiezen die deze cursus aanbiedt, ook wanneer de cursist een ander lesmoment of seizoen heeft opgegeven.</p>
+<form method="post" action="{% url 'planning:application_assign' application.pk %}">
+  {% csrf_token %}
+  <label for="group-select">Seizoen en lesgroep</label>
+  <select id="group-select" name="group">
+    <option value="">Geen conceptplaatsing</option>
+    {% for group in eligible_groups %}
+    <option value="{{ group.pk }}" {% if application.proposed_group_id == group.pk %}selected{% endif %}>{{ group.season.name }} — {{ group.name }} — {{ group.get_day_display }} {{ group.starts_at|time:'H:i' }}{% if application.proposed_group_id == group.pk %} (huidig){% endif %}</option>
+    {% endfor %}
+  </select>
+  <label class="mhav-checkbox-line"><input type="checkbox" name="capacity_override" value="yes"> Capaciteitsuitzondering toestaan (wordt geregistreerd)</label>
+  <button class="button button-primary" type="submit">{% if placement_state == 'concept' %}Conceptindeling wijzigen{% else %}Conceptplaatsing opslaan{% endif %}</button>
+</form>
+{% if not eligible_groups %}<div class="mhav-app-warning">Er zijn geen wijzigbare lesgroepen voor deze cursus. Een goedgekeurde/vergrendelde groep kan wel hierboven als bestaande indeling staan, maar kan niet meer via dit formulier worden aangepast.</div>{% endif %}
+<div class="mhav-app-note"><strong>Gevolg:</strong> de cursist verschijnt als concept in Groepsindeling. Er wordt <strong>geen e-mail</strong> verstuurd. Een specifieke seizoensvoorkeur kan voor definitieve plaatsing nog akkoord van de cursist vereisen.</div>
+{% elif placement_state == 'concept' %}
+<div class="mhav-app-warning">De groepsplanning is al goedgekeurd en vergrendeld. Deze conceptindeling kun je hier niet meer wijzigen. Je kunt de plaatsing wel hieronder definitief verwerken als aan de voorwaarden is voldaan.</div>
+{% endif %}
+
+{% if needs_season_consent %}
+<div class="mhav-app-warning"><strong>Akkoord ander seizoen nodig.</strong> De conceptlesgroep ligt buiten het specifiek aangevraagde seizoen. Vraag eerst akkoord via e-mail voordat je definitief plaatst.</div>
+{% endif %}
+{% if needs_season_consent or not placement_group %}
+<details class="mhav-secondary-action"><summary>Ander seizoen voorstellen</summary>
+  <form method="post" action="{% url 'planning:application_propose_season' application.pk %}">{% csrf_token %}
+    <label for="alternative-season">Cursusperiode</label>
+    <select id="alternative-season" name="season" required><option value="">Kies een seizoen</option>{% for season in alternative_seasons %}<option value="{{ season.pk }}" {% if placement_group and placement_group.season_id == season.pk %}selected{% endif %}>{{ season.name }}</option>{% endfor %}</select>
+    <button class="button button-outline" type="submit">Seizoen voorstellen</button>
+  </form>
+  <div class="mhav-app-note">Bij een specifieke seizoensvoorkeur ontvangt de cursist een e-mail met akkoordlink. Bij een flexibele voorkeur wordt het seizoen direct bijgewerkt.</div>
+</details>
+{% endif %}
+
+{% if placement_state == 'concept' %}
+<h3>Definitieve plaatsing</h3>
+{% if can_confirm_placement %}
+<p>De lesgroep is goedgekeurd en de vereiste seizoensinstemming is geregeld.</p>
+<form method="post" action="{% url 'planning:application_confirm' application.pk %}">{% csrf_token %}
+<button class="button button-primary" type="submit">Plaatsing definitief bevestigen</button></form>
+<div class="mhav-app-note"><strong>Gevolg:</strong> de geleider en hond worden automatisch gekoppeld, de definitieve inschrijving wordt verwerkt en een plaatsingsmail wordt ingepland.</div>
+{% else %}
+<div class="mhav-app-warning">Definitief plaatsen is nog niet mogelijk.
+{% if not placement_group_approved %}De lesgroep moet eerst worden goedgekeurd in Groepsindeling.{% endif %}
+{% if needs_season_consent %} De cursist moet het andere seizoen eerst accepteren.{% endif %}
+</div>
+{% endif %}
+{% endif %}
+{% endif %}
+</section>
+
+<section class="mhav-app-card" aria-labelledby="payment-heading">
+<h2 id="payment-heading">4. Betaling</h2>
+{% if application.linked_enrollment_id %}
+{% if payment %}
+<p><strong>Status:</strong> {{ payment.get_status_display }} · <strong>Referentie:</strong> {{ payment.reference }}</p>
+<p><strong>Cursusbedrag:</strong> {% if payment.amount_due is not None %}€ {{ payment.amount_due }}{% else %}Nog niet vastgesteld{% endif %} · <strong>Betaaltermijn:</strong> {{ payment.due_at|date:'d-m-Y' }}</p>
+{% if payment.status == 'paid' %}<div class="mhav-app-note">Betaald op {{ payment.paid_at|date:'d-m-Y H:i' }}. Vastgelegd door {{ payment.paid_by }}. Betaallink is niet beschikbaar.</div>
+{% elif payment.status == 'pending' %}
+<div class="mhav-app-note">De plaats is gereserveerd. Online betalen is nog niet beschikbaar; Stripe volgt in Phase 4C. Een beheerder kan de betaling registreren.</div>
+<form method="post" action="{% url 'planning:application_payment' application.pk %}">{% csrf_token %}
+<input type="hidden" name="action" value="amount"><label>Cursusbedrag (€)</label><input type="number" name="amount" min="0.01" max="9999999.99" step="0.01" value="{{ payment.amount_due|default_if_none:'' }}" required>
+<label>Toelichting (verplicht)</label><textarea name="note" required rows="2"></textarea><button class="button button-outline" type="submit">Bedrag vastleggen</button></form>
+<form method="post" action="{% url 'planning:application_payment' application.pk %}">{% csrf_token %}
+<input type="hidden" name="action" value="paid"><label>Betaalmethode</label><select name="method"><option value="bank">Bankoverschrijving</option><option value="cash">Contant</option><option value="other">Anders</option></select>
+<label>Toelichting (verplicht)</label><textarea name="note" required rows="2" placeholder="Wanneer en hoe is de betaling gecontroleerd?"></textarea>
+<button class="button button-primary" type="submit">Betaling als ontvangen registreren</button></form>
+<div class="mhav-app-note">Gevolg: betalingsstatus wordt Betaald, wijziging wordt gelogd en de cursist krijgt een bevestigingsmail. Er is geen online betaallink beschikbaar.</div>
+{% endif %}
+<details><summary>Betalingshistorie</summary><ul>{% for event in payment.events.all %}<li>{{ event.recorded_at|date:'d-m-Y H:i' }} — {{ event.action }} — {{ event.actor }}: {{ event.note }}</li>{% empty %}<li>Nog geen wijzigingen.</li>{% endfor %}</ul></details>
+{% else %}<p>De betalingsregistratie wordt aangemaakt bij de definitieve plaatsing. Voor oudere definitieve aanmeldingen kan de beheerder deze eenmalig initialiseren.</p>
+<form method="post" action="{% url 'planning:application_payment' application.pk %}">{% csrf_token %}<input type="hidden" name="action" value="initialize"><label>Toelichting</label><textarea name="note" required></textarea><button type="submit" class="button button-outline">Betalingsregistratie initialiseren</button></form>{% endif %}
+{% else %}<p>Betaling wordt pas relevant na definitieve plaatsing.</p>{% endif %}
+</section>
+<section class="mhav-app-card" aria-labelledby="status-heading">
+<h2 id="status-heading">5. Statusbeheer en acties</h2>
+<p>Huidige status: <strong>{{ application.get_status_display }}</strong></p>
+{% if application.user_id %}<p>Statuswijzigingen zijn zichtbaar bij de gekoppelde cursist in Mijn MHAV. Zonder gekoppeld account kan de cursist de status niet via Mijn MHAV bekijken.</p>{% else %}<p>Er is nog geen Mijn MHAV-account gekoppeld. De cursist ontvangt wel e-mail op {{ application.email }}.</p>{% endif %}
+{% if can_handle %}
+{% if application.status != 'waitlist' and application.status != 'rejected' %}
+<form method="post" action="{% url 'planning:application_handle' application.pk %}">{% csrf_token %}<input type="hidden" name="decision" value="waitlist"><button class="button button-outline" type="submit">Op wachtlijst plaatsen</button></form>
+<div class="mhav-app-note">Gevolg: status wordt <strong>Wachtlijst</strong>, eventuele conceptplaatsing vervalt en er wordt een e-mailnotificatie ingepland. Bij een gekoppeld account is de status zichtbaar in Mijn MHAV.</div>
+<form method="post" action="{% url 'planning:application_handle' application.pk %}">{% csrf_token %}<input type="hidden" name="decision" value="close"><label for="closure-reason">Reden afsluiten</label><select id="closure-reason" name="reason" required><option value="">Kies reden</option><option value="capacity">Geen plaats beschikbaar</option><option value="availability">Geen passend lesmoment</option><option value="withdrawn">Ingetrokken</option><option value="other">Anders</option></select><label for="closure-note">Toelichting (optioneel)</label><textarea id="closure-note" name="note" rows="2"></textarea><button class="button button-outline" type="submit">Aanmelding afsluiten</button></form>
+<div class="mhav-app-note">Gevolg: aanmelding wordt afgesloten, conceptplaatsing vervalt en een e-mailnotificatie wordt ingepland.</div>
+{% endif %}
+{% endif %}
+{% if can_reopen %}<form method="post" action="{% url 'planning:application_handle' application.pk %}">{% csrf_token %}<input type="hidden" name="decision" value="reopen"><button class="button button-outline" type="submit">Aanmelding heropenen</button></form><div class="mhav-app-note">Gevolg: status wordt Nieuw. Er wordt geen automatische e-mail verzonden.</div>{% endif %}
+{% if application.status == 'pending_confirmation' %}<div class="mhav-app-warning">Wacht op bevestiging door de cursist. Plaatsing en statusafhandeling zijn geblokkeerd.</div>{% endif %}
+<h3>Interne notities</h3>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="button button-primary" type="submit">Notities opslaan</button></form>
+<div class="mhav-app-note">Gevolg: alleen interne notities worden bijgewerkt. Er wordt geen e-mail verzonden en de cursist ziet deze notities niet.</div>
+</section>
+</div></div></section>
 {% endblock %}

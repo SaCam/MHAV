@@ -413,3 +413,41 @@ class LessonRecord(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=('enrollment', 'lesson_date'), name='unique_mhav_lesson_record')]
         ordering = ('lesson_date', 'enrollment_id')
+
+
+class RegistrationPayment(models.Model):
+    """One payment obligation per finalized application; no online checkout yet."""
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Nog te betalen'
+        PAID = 'paid', 'Betaald'
+        WAIVED = 'waived', 'Vrijgesteld'
+        REFUNDED = 'refunded', 'Terugbetaald'
+    class Method(models.TextChoices):
+        BANK = 'bank', 'Bankoverschrijving'
+        CASH = 'cash', 'Contant'
+        OTHER = 'other', 'Anders'
+        ONLINE = 'online', 'Online'
+    application = models.OneToOneField('CourseApplication', on_delete=models.PROTECT, related_name='payment')
+    amount_due = models.DecimalField('Cursusbedrag', max_digits=9, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, default='EUR')
+    reference = models.CharField('Betaalreferentie', max_length=40, unique=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    due_at = models.DateTimeField(null=True, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    paid_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='mhav_payments_recorded')
+    method = models.CharField(max_length=12, choices=Method.choices, blank=True)
+    note = models.TextField('Toelichting betaling', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class RegistrationPaymentEvent(models.Model):
+    payment = models.ForeignKey(RegistrationPayment, on_delete=models.PROTECT, related_name='events')
+    action = models.CharField(max_length=32)
+    note = models.TextField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    old_status = models.CharField(max_length=12, blank=True)
+    new_status = models.CharField(max_length=12, blank=True)
+    class Meta:
+        ordering = ('-recorded_at', '-pk')

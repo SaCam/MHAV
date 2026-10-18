@@ -23,6 +23,28 @@ def compatible_groups(application, groups):
         choices.append((0 if preference == 'preferred' else 1, group))
     return sorted(choices, key=lambda x: (x[0], x[1].starts_at, x[1].pk))
 
+def manually_assignable_groups(application, groups):
+    """Show all unlocked planned groups for the course, regardless of preferences.
+
+    Administrator choices are intentionally broader than automatic planning.
+    Consent for a different specifically requested season is still enforced
+    at final placement, not at the draft stage.
+    """
+    preferences = application.time_preferences or {}
+    choices = []
+    for group in groups:
+        if group.execution_status != 'planned' or group.course_id != application.course_id:
+            continue
+        preference = preferences.get(str(group.pk), '')
+        priority = (0 if preference == 'preferred' else
+                    1 if preference == 'ok' else
+                    3 if preference == 'unavailable' else 2)
+        choices.append((priority, group))
+    return [group for _, group in sorted(
+        choices, key=lambda item: (item[0], item[1].season.starts_on if hasattr(item[1], 'season') else '',
+                                   item[1].starts_at, item[1].pk))]
+
+
 def generate_proposals(season_id=None, course_id=None):
     """Fill free slots FIFO, preserving existing manual proposals. Caller holds transaction locks."""
     applications_qs = CourseApplication.objects.select_for_update().filter(
