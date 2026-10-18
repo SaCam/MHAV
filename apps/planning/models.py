@@ -178,6 +178,8 @@ class CourseApplication(models.Model):
     confirmation_email_status = models.CharField('Bevestigingsmail', max_length=12, choices=[('not_sent', 'Nog niet verzonden'), ('sent', 'Verzonden'), ('failed', 'Verzenden mislukt')], default='not_sent')
     confirmation_email_sent_at = models.DateTimeField('Bevestigingsmail verzonden op', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='course_applications')
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='submitted_course_applications', verbose_name='Ingediend door')
+    submission_source = models.CharField('Inschrijfkanaal', max_length=12, choices=[('guest', 'Gast'), ('member', 'Mijn MHAV'), ('admin', 'Beheerder')], default='guest')
     first_name = models.CharField('Voornaam', max_length=100)
     last_name = models.CharField('Achternaam', max_length=120)
     email = models.EmailField('E-mailadres')

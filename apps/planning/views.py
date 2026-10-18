@@ -238,10 +238,13 @@ def _offered_times(season_id=None, course_id=None):
     return [group for group in groups if (group.season_id, group.course_id) in open_pairs]
 
 
-def public_application(request):
-    """Guest-friendly intake; creates neither account nor placement."""
+def public_application(request, on_behalf=False):
+    """Single intake for guests, members, and authorized administrators."""
+    if on_behalf and not is_planner(request.user):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied('Alleen beheerders mogen namens iemand aanmelden.')
     initial = {}
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and not on_behalf:
         u = request.user
         initial.update(first_name=u.first_name, last_name=u.last_name, email=u.email)
         profile = getattr(u, 'member_profile', None)
@@ -251,7 +254,7 @@ def public_application(request):
     form = CourseApplicationForm(
         request.POST or None,
         initial=initial if request.method != 'POST' else None,
-        applicant_user=request.user if request.user.is_authenticated else None,
+        applicant_user=request.user if request.user.is_authenticated and not on_behalf else None,
     )
     selected_course = request.POST.get('course') if request.method == 'POST' else request.GET.get('course')
     selected_season = request.POST.get('season') if request.method == 'POST' else request.GET.get('season')
@@ -281,15 +284,22 @@ def public_application(request):
                 application = form.save(commit=False)
                 application.privacy_accepted_at = timezone.now()
                 application.time_preferences = preferences
-                if request.user.is_authenticated and request.user.email.strip().casefold() == application.email.strip().casefold():
+                application.submission_source = 'admin' if on_behalf else ('member' if request.user.is_authenticated else 'guest')
+                if request.user.is_authenticated:
+                    application.submitted_by = request.user
+                if request.user.is_authenticated and not on_behalf:
                     application.user = request.user
                 application.save()
                 if application.user_id:
                     from apps.accounts.dog_profiles import ensure_application_dog
                     ensure_application_dog(application)
-            request.session['last_course_application_id'] = application.pk
-            request.session['mhav_pending_application_id'] = application.pk
+            if not on_behalf:
+                request.session['last_course_application_id'] = application.pk
+                request.session['mhav_pending_application_id'] = application.pk
             # Email verification is sent on demand; no account is created here.
+            if on_behalf:
+                messages.success(request, 'De aanmelding is namens de cursist ontvangen.')
+                return redirect('planning:application_detail', pk=application.pk)
             return redirect('website:application_thanks')
     import json
     from .models import SeasonCourseOffering
@@ -298,7 +308,7 @@ def public_application(request):
     return render(request, 'planning/application_form.html', {'form': form, 'groups': visible_groups,
         'open_pairs_json': json.dumps(open_pairs),
         'posted_preferences': request.POST if request.method == 'POST' else {},
-        'preference_error': preference_error})
+        'preference_error': preference_error, 'on_behalf': on_behalf})
 
 
 def application_thanks(request):

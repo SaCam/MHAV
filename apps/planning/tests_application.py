@@ -103,3 +103,40 @@ class PublicApplicationTests(TestCase):
             response = self.client.post(reverse('website:application_account_invite'))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(len(mail.outbox), 0)
+
+
+class RegistrationV2IdentityTests(PublicApplicationTests):
+    def test_guest_source_recorded(self):
+        self.client.post(self.url, self.data)
+        app = CourseApplication.objects.get()
+        self.assertEqual(app.submission_source, 'guest')
+        self.assertIsNone(app.submitted_by_id)
+
+    def test_logged_in_identity_cannot_be_forged(self):
+        User = get_user_model()
+        user = User.objects.create_user(username='memberv2', password='test-password', email='member@example.org', first_name='Member', last_name='Example')
+        self.client.force_login(user)
+        self.client.post(self.url, {**self.data, 'first_name': 'Imposter', 'email': 'other@example.org'})
+        app = CourseApplication.objects.get()
+        self.assertEqual(app.email, user.email)
+        self.assertEqual(app.first_name, user.first_name)
+        self.assertEqual(app.user_id, user.pk)
+        self.assertEqual(app.submitted_by_id, user.pk)
+        self.assertEqual(app.submission_source, 'member')
+
+    def test_anonymous_cannot_submit_on_behalf(self):
+        response = self.client.post(reverse('planning:application_on_behalf'), self.data)
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(CourseApplication.objects.exists())
+
+    def test_admin_can_submit_for_another_person(self):
+        User = get_user_model()
+        admin = User.objects.create_superuser(username='adminv2', password='test-password', email='admin@example.org')
+        self.client.force_login(admin)
+        response = self.client.post(reverse('planning:application_on_behalf'), self.data)
+        self.assertEqual(response.status_code, 302)
+        app = CourseApplication.objects.get()
+        self.assertEqual(app.email, self.data['email'])
+        self.assertIsNone(app.user_id)
+        self.assertEqual(app.submitted_by_id, admin.pk)
+        self.assertEqual(app.submission_source, 'admin')

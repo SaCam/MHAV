@@ -11,7 +11,7 @@
         <div class="container">
             <a href="{% url 'website:courses' %}">← Cursussen</a>
             <h1>
-                Inschrijven voor een cursus
+                {% if on_behalf %}Aanmelden namens een cursist{% else %}Inschrijven voor een cursus{% endif %}
             </h1>
             <p>
                 Vul het formulier in. Je ontvangt pas een definitieve cursusplaats nadat de administratie je indeling heeft bevestigd. Een websiteaccount is niet verplicht.
@@ -55,7 +55,7 @@
                 </fieldset>
                 <fieldset>
                     <legend>2. Gegevens cursist</legend>
-                    {% if user.is_authenticated %}
+                    {% if user.is_authenticated and not on_behalf %}
                         <p>Je bent ingelogd. Je kunt alleen jezelf aanmelden. Je naam en e-mailadres komen uit je MHAV-account en kunnen hier niet worden gewijzigd.</p>
                     {% endif %}
                     <div class="mhav-registration-grid">

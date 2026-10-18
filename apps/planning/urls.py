@@ -8,6 +8,7 @@ urlpatterns=[
     path('',views.overview,name='overview'),
     path('instructeur/seizoenen/', views.trainer_seasons, name='trainer_seasons'),
     path('instructeur/seizoen/<int:pk>/beschikbaarheid/', views.trainer_availability, name='trainer_availability'),
+    path('aanmeldingen/namens-cursist/', views.public_application, {'on_behalf': True}, name='application_on_behalf'),
     path('aanmeldingen/', views.application_list, name='application_list'),
     path('aanmeldingen/automatisch/', views.application_auto_plan, name='application_auto_plan'),
     path('aanmeldingen/planning/actie/', views.application_plan_action, name='application_plan_action'),
