@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="container" style="max-width:650px;margin:3rem auto">
+  {% if accepted %}<h1>Bedankt voor je akkoord</h1><p>Je cursusaanmelding is bijgewerkt. MHAV neemt contact met je op over de indeling.</p>
+  {% else %}<h1>Voorstel cursusperiode</h1><p>Beste {{ application.first_name }},</p>
+  <p>Voor de cursus <strong>{{ application.course }}</strong> stelt MHAV <strong>{{ application.alternative_season }}</strong> voor.</p>
+  <p>Je oorspronkelijke voorkeur blijft bewaard. Door hieronder te bevestigen ga je akkoord met de voorgestelde periode.</p>
+  <form method="post">{% csrf_token %}<button class="button button-primary" type="submit">Ik ga akkoord met deze periode</button></form>{% endif %}
+</section>
+{% endblock %}

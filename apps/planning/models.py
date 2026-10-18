@@ -212,6 +212,10 @@ class CourseApplication(models.Model):
 
     start_preference = models.CharField('Gewenste start', max_length=12, choices=StartPreference.choices, default=StartPreference.FLEXIBLE)
     requested_season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True, blank=True, related_name='requested_applications', verbose_name='Oorspronkelijk gevraagd seizoen')
+    alternative_season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True, blank=True, related_name='alternative_applications', verbose_name='Voorgesteld alternatief seizoen')
+    alternative_proposed_at = models.DateTimeField(null=True, blank=True)
+    alternative_accepted_at = models.DateTimeField(null=True, blank=True)
+
     season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True, blank=True, related_name='applications')
     course = models.ForeignKey('website.SitePage', on_delete=models.SET_NULL, null=True, blank=True, related_name='course_applications')
     experience = models.TextField('Eerdere training / niveau', blank=True)

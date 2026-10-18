@@ -570,7 +570,7 @@ def application_detail(request, pk):
     groups = TrainingGroup.objects.filter(course=application.course, season__status__in=[Season.Status.DRAFT, Season.Status.ACTIVE], planning_locked_at__isnull=True, execution_status='planned').select_related('season') if application.course_id and application.season_id is None else (TrainingGroup.objects.filter(season=application.season, course=application.course, planning_locked_at__isnull=True, execution_status='planned').select_related('season') if application.season_id and application.course_id else TrainingGroup.objects.none())
     eligible = [g for _, g in compatible_groups(application, groups)]
     preferences = [{'group': g, 'preference': (application.time_preferences or {}).get(str(g.pk), '')} for g in groups.order_by('day', 'starts_at', 'pk')]
-    return render(request, 'planning/application_detail.html', {'application':application, 'form':form, 'eligible_groups':eligible, 'time_preference_rows':preferences, 'combinations':Combination.objects.select_related('handler', 'dog').order_by('handler__last_name')[:300]})
+    return render(request, 'planning/application_detail.html', {'application':application, 'form':form, 'eligible_groups':eligible, 'time_preference_rows':preferences, 'alternative_seasons': Season.objects.exclude(status=Season.Status.CLOSED).filter(course_offerings__course=application.course).distinct().order_by('starts_on'), 'combinations':Combination.objects.select_related('handler', 'dog').order_by('handler__last_name')[:300]})
 
 
 def is_trainer(user):
@@ -993,6 +993,78 @@ def application_plan_review(request):
 
 @require_POST
 @user_passes_test(is_planner, login_url='accounts:login')
+def application_propose_season(request, pk):
+    from django.core.mail import send_mail
+    from .models import SeasonCourseOffering
+    from django.core import signing
+    from django.urls import reverse
+    from django.db import transaction
+    from django.conf import settings
+    with transaction.atomic():
+        application = get_object_or_404(CourseApplication.objects.select_for_update(), pk=pk)
+        if application.linked_enrollment_id or application.status in (CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED):
+            messages.error(request, 'Deze aanvraag is al afgehandeld.')
+            return redirect('planning:application_detail', pk=pk)
+        season = Season.objects.filter(pk=request.POST.get('season')).first()
+        if not season or season.status == Season.Status.CLOSED or season.pk == application.season_id:
+            messages.error(request, 'Kies een ander, niet-afgesloten seizoen.')
+            return redirect('planning:application_detail', pk=pk)
+        if not SeasonCourseOffering.objects.filter(season=season, course=application.course).exists():
+            messages.error(request, 'De cursus wordt niet in dit seizoen aangeboden.')
+            return redirect('planning:application_detail', pk=pk)
+        if application.start_preference != CourseApplication.StartPreference.SPECIFIC:
+            application.season = season
+            application.alternative_season = None
+            application.alternative_proposed_at = None
+            application.alternative_accepted_at = None
+            application.proposed_group = None
+            application.save(update_fields=['season','alternative_season','alternative_proposed_at','alternative_accepted_at','proposed_group','updated_at'])
+            messages.success(request, 'Seizoen bijgewerkt. Controleer de lesgroepindeling opnieuw.')
+            return redirect('planning:application_detail', pk=pk)
+        application.alternative_season = season
+        application.alternative_proposed_at = timezone.now()
+        application.alternative_accepted_at = None
+        application.save(update_fields=['alternative_season','alternative_proposed_at','alternative_accepted_at','updated_at'])
+        token = signing.dumps({'pk': application.pk, 'season': season.pk, 'at': application.alternative_proposed_at.isoformat()}, salt='mhav-alternative-season')
+        url = request.build_absolute_uri(reverse('planning:application_accept_season', args=[token]))
+        try:
+            send_mail('MHAV: voorstel andere cursusperiode',
+                      f'Beste {application.first_name},\n\nVoor {application.course} stellen wij {season.name} voor in plaats van de door jou gekozen cursusperiode.\nBekijk en accepteer het voorstel via: {url}\n\nDit voorstel is 14 dagen geldig.\n\nMHAV',
+                      settings.DEFAULT_FROM_EMAIL, [application.email], fail_silently=False)
+        except Exception:
+            messages.error(request, 'Voorstel opgeslagen, maar e-mail verzenden is mislukt. Controleer de mailinstellingen en verzend opnieuw.')
+            return redirect('planning:application_detail', pk=pk)
+    messages.success(request, 'Alternatief seizoen voorgesteld en e-mail verzonden. Wacht op akkoord.')
+    return redirect('planning:application_detail', pk=pk)
+
+
+def application_accept_season(request, token):
+    from django.core import signing
+    from django.db import transaction
+    try:
+        data = signing.loads(token, salt='mhav-alternative-season', max_age=14 * 24 * 3600)
+    except (signing.BadSignature, signing.SignatureExpired):
+        raise Http404('Dit voorstel is ongeldig of verlopen.')
+    with transaction.atomic():
+        application = get_object_or_404(CourseApplication.objects.select_for_update(), pk=data.get('pk'))
+        valid = (application.alternative_season_id == data.get('season') and
+                 application.alternative_proposed_at and
+                 application.alternative_proposed_at.isoformat() == data.get('at') and
+                 not application.alternative_accepted_at and not application.linked_enrollment_id and
+                 application.status not in (CourseApplication.Status.PROCESSED, CourseApplication.Status.REJECTED))
+        if not valid:
+            raise Http404('Dit voorstel is niet meer geldig.')
+        if request.method == 'POST':
+            application.season_id = application.alternative_season_id
+            application.alternative_accepted_at = timezone.now()
+            application.proposed_group = None
+            application.save(update_fields=['season','alternative_accepted_at','proposed_group','updated_at'])
+            return render(request, 'planning/alternative_season_response.html', {'accepted': True})
+    return render(request, 'planning/alternative_season_response.html', {'application': application, 'token': token})
+
+
+@require_POST
+@user_passes_test(is_planner, login_url='accounts:login')
 def application_assign(request, pk):
     from django.db import transaction
     from django.db.models import Count, Q
@@ -1017,6 +1089,11 @@ def application_assign(request, pk):
         group = get_object_or_404(TrainingGroup.objects.select_for_update(), pk=group_value) if group_value.isdecimal() else None
         if not group or group.season.status == Season.Status.CLOSED or group.course_id != application.course_id or (application.season_id is not None and group.season_id != application.season_id):
             messages.error(request, 'Kies een lesgroep binnen de aangevraagde cursus en het seizoen.')
+            return redirect('planning:application_detail', pk=pk)
+        if (application.start_preference == CourseApplication.StartPreference.SPECIFIC and
+                group.season_id != (application.requested_season_id or application.season_id) and
+                (application.alternative_accepted_at is None or application.alternative_season_id != group.season_id)):
+            messages.error(request, 'Voor dit seizoen is eerst akkoord van de aanvrager nodig.')
             return redirect('planning:application_detail', pk=pk)
         if group.execution_status != 'planned':
             messages.error(request, 'Deze lesgroep is al gestart of afgesloten; plaatsing is niet toegestaan.')
@@ -1064,6 +1141,11 @@ def application_confirm(request, pk):
             return redirect('planning:application_detail', pk=pk)
         if group.season.status == Season.Status.CLOSED or group.course_id != application.course_id or (application.season_id is not None and group.season_id != application.season_id):
             messages.error(request, 'Lesgroep en aanvraag komen niet meer overeen.')
+            return redirect('planning:application_plan_review')
+        if (application.start_preference == CourseApplication.StartPreference.SPECIFIC and
+                group.season_id != (application.requested_season_id or application.season_id) and
+                (application.alternative_accepted_at is None or application.alternative_season_id != group.season_id)):
+            messages.error(request, 'De aanvrager heeft dit alternatieve seizoen nog niet geaccepteerd.')
             return redirect('planning:application_plan_review')
         over_capacity = Enrollment.objects.filter(group=group, status=Enrollment.Status.PLACED).count() >= group.capacity
         if over_capacity and not application.capacity_override_by_id:
