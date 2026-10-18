@@ -375,7 +375,31 @@ def application_account_claim(request, token):
     User = get_user_model()
     existing = User.objects.filter(email__iexact=application.email).first()
     if existing:
-        return render(request, 'planning/application_account_claim.html', {'existing': True})
+        # A signed email link proves control of the mailbox, but linking an
+        # existing account also requires an authenticated session for that account.
+        if request.method == 'POST':
+            if not request.user.is_authenticated:
+                from django.core.exceptions import PermissionDenied
+                raise PermissionDenied('Log eerst in met je bestaande MHAV-account.')
+            if request.user.pk != existing.pk:
+                from django.core.exceptions import PermissionDenied
+                raise PermissionDenied('Deze aanmelding hoort bij een ander account.')
+            with transaction.atomic():
+                locked = CourseApplication.objects.select_for_update().get(pk=pk)
+                if locked.user_id and locked.user_id != existing.pk:
+                    from django.core.exceptions import PermissionDenied
+                    raise PermissionDenied('Deze aanmelding is al aan een ander account gekoppeld.')
+                if not locked.user_id:
+                    locked.user = existing
+                    locked.save(update_fields=['user'])
+            messages.success(request, 'Je cursusaanmelding is gekoppeld aan je MHAV-account.')
+            return redirect('accounts:dashboard')
+        return render(request, 'planning/application_account_claim.html', {
+            'existing': True,
+            'matching_account': request.user.is_authenticated and request.user.pk == existing.pk,
+            'wrong_account': request.user.is_authenticated and request.user.pk != existing.pk,
+            'login_next': request.get_full_path(),
+        })
     from django import forms
     class PasswordForm(forms.Form):
         password1 = forms.CharField(label='Wachtwoord', widget=forms.PasswordInput)

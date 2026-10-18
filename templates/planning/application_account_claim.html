@@ -13,9 +13,16 @@
                     Deze aanmelding is al gekoppeld aan een account. <a href="{% url 'accounts:login' %}">Inloggen</a>
                 </p>
             {% elif existing %}
-                <p>
-                    Er bestaat al een account voor dit e-mailadres. <a href="{% url 'accounts:login' %}">Log in</a> of <a href="{% url 'accounts:password_reset' %}">herstel je wachtwoord</a>. De cursusadministratie kan je aanmelding aan je bestaande account koppelen.
-                </p>
+                <p>Er bestaat al een MHAV-account voor dit e-mailadres.</p>
+                {% if matching_account %}
+                    <p>Je bent ingelogd met het bijbehorende account. Bevestig hieronder dat je deze aanmelding wilt koppelen.</p>
+                    <form method="post">{% csrf_token %}
+                        <button type="submit" class="button button-primary">Aanmelding koppelen aan Mijn MHAV</button>
+                    </form>
+                {% else %}
+                    {% if wrong_account %}<p>Je bent ingelogd met een ander account. Log uit en meld je aan met het juiste account.</p>{% endif %}
+                    <p><a href="{% url 'accounts:login' %}?next={{ login_next|urlencode }}">Inloggen met bestaand account</a> of <a href="{% url 'accounts:password_reset' %}">wachtwoord herstellen</a>.</p>
+                {% endif %}
             {% else %}
                 <p>
                     Je e-mailadres is bevestigd. Kies nu een wachtwoord. Je cursusaanvraag blijft behouden.

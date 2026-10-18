@@ -17,8 +17,8 @@
 <section class="section">
   <div class="container mhav-admin-refresh">
     <div class="mhav-plan-toolbar">
-      <a class="button button-primary" href="{% url 'planning:application_plan_review' %}">Gefaseerd automatisch plannen</a>
-      <a class="button button-outline" href="{% url 'planning:application_plan_review' %}">Controleer conceptplanning ({{ draft_count }})</a>
+      <a class="button button-primary" href="{% url 'planning:application_plan_review' %}">Planning overzicht</a>
+      <a href="{% url 'planning:application_on_behalf' %}" class="button button-outline">+ Aanmelding toevoegen</a>
     </div>
     {% for review in season_reviews %}
     <div class="mhav-admin-panel" style="margin:1rem 0;padding:1.25rem;border-left:4px solid #bd8425">
