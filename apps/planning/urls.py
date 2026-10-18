@@ -17,6 +17,7 @@ urlpatterns=[
     path('aanmeldingen/<int:pk>/afhandelen/', views.application_handle, name='application_handle'),
     path('aanmeldingen/<int:pk>/bevestigen/', views.application_confirm, name='application_confirm'),
     path('aanmeldingen/<int:pk>/combinatie/', views.application_link_combination, name='application_link_combination'),
+    path('aanmeldingen/<int:pk>/identiteit-verifieren/', views.application_verify_identity, name='application_verify_identity'),
     path('aanmeldingen/<int:pk>/', views.application_detail, name='application_detail'),
     path('cursusaanbod/', views.catalogue, name='catalogue'),
     path('seizoen/<int:pk>/cursussen/', views.season_course_offerings, name='season_course_offerings'),

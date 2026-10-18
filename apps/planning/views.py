@@ -487,6 +487,52 @@ def application_list(request):
     })
 
 
+@require_POST
+@user_passes_test(is_planner, login_url='accounts:login')
+def application_verify_identity(request, pk):
+    """Administrator records an independently checked identity before linking an account."""
+    from django.db import transaction
+    from django.utils import timezone
+    from .models import CourseApplication
+    from .finalization import resolve_identity
+
+    account_id = request.POST.get('account_id', '').strip()
+    method = request.POST.get('verification_method', '').strip()
+    reference = request.POST.get('verification_reference', '').strip()
+    if method not in ('in_person', 'video_call', 'authenticated_contact') or not reference or len(reference) > 500:
+        messages.error(request, 'Kies een verificatiemethode en leg kort vast hoe de identiteit is gecontroleerd.')
+        return redirect('planning:application_detail', pk=pk)
+    if not account_id.isdecimal():
+        messages.error(request, 'Selecteer een geldig MHAV-account.')
+        return redirect('planning:application_detail', pk=pk)
+    with transaction.atomic():
+        app = get_object_or_404(CourseApplication.objects.select_for_update(), pk=pk)
+        user = get_user_model().objects.filter(pk=int(account_id), is_active=True).first()
+        if not user or app.linked_enrollment_id or app.user_id:
+            messages.error(request, 'Aanmelding is al gekoppeld of het account is niet beschikbaar.')
+        elif user.email.strip().casefold() != app.email.strip().casefold():
+            messages.error(request, 'E-mailadres van aanvraag en account komen niet overeen.')
+        elif (user.first_name.strip().casefold() != app.first_name.strip().casefold()
+              or user.last_name.strip().casefold() != app.last_name.strip().casefold()):
+            messages.error(request, 'Naam van aanvraag en account komen niet overeen. Onderzoek dit eerst.')
+        elif get_user_model().objects.filter(email__iexact=app.email).exclude(pk=user.pk).exists():
+            messages.error(request, 'Meerdere accounts met dit e-mailadres: eerst handmatig oplossen.')
+        elif app.linked_combination_id and app.linked_combination.handler_id != user.pk:
+            messages.error(request, 'De gekoppelde geleider-hondcombinatie hoort bij een ander account.')
+        elif app.dog_profile_id and not Combination.objects.filter(handler=user, dog_id=app.dog_profile_id).exists():
+            messages.error(request, 'Het hondenprofiel hoort niet bij het gekozen account.')
+        else:
+            app.user = user
+            app.identity_verified_by = request.user
+            app.identity_verified_at = timezone.now()
+            app.identity_verification_method = method
+            app.identity_verification_reference = reference
+            app.save(update_fields=['user', 'identity_verified_by', 'identity_verified_at',
+                                    'identity_verification_method', 'identity_verification_reference', 'updated_at'])
+            messages.success(request, 'Accountkoppeling na identiteitscontrole opgeslagen.')
+    return redirect('planning:application_detail', pk=pk)
+
+
 @user_passes_test(is_planner, login_url='accounts:login')
 def application_detail(request, pk):
     application = get_object_or_404(CourseApplication.objects.select_related('course','season','user'), pk=pk)

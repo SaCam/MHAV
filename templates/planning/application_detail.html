@@ -83,6 +83,28 @@
                   <p><strong>Bijzonderheden:</strong> {{ application.dog_notes|default:'Geen'|linebreaksbr }}</p>
                   <p><small>Privacyakkoord: {{ application.privacy_accepted_at|date:'d-m-Y H:i' }}</small></p>
                 </details>
+                <h3>Identiteit en MHAV-account</h3>
+                {% if application.user_id %}
+                  <p>Gekoppeld account: {{ application.user.get_full_name }} ({{ application.user.email }})</p>
+                  {% if application.identity_verified_at %}<p>Handmatig gecontroleerd op {{ application.identity_verified_at|date:'d-m-Y H:i' }} door {{ application.identity_verified_by }}.</p>{% endif %}
+                {% elif not application.linked_enrollment_id %}
+                  <p>Alleen een gelijk e-mailadres is geen bewijs van identiteit. Controleer de cursist via een onafhankelijk kanaal voordat je een bestaand account koppelt.</p>
+                  <form method="post" action="{% url 'planning:application_verify_identity' application.pk %}">
+                    {% csrf_token %}
+                    <label for="account-id">Account-ID (controleer in gebruikersbeheer)</label>
+                    <input id="account-id" name="account_id" type="number" min="1" required>
+                    <label for="verification-method">Hoe is de identiteit gecontroleerd?</label>
+                    <select id="verification-method" name="verification_method" required>
+                      <option value="">Kies methode</option>
+                      <option value="in_person">Persoonlijk gecontroleerd</option>
+                      <option value="video_call">Videogesprek</option>
+                      <option value="authenticated_contact">Gecontroleerd contactkanaal</option>
+                    </select>
+                    <label for="verification-reference">Controle / referentie (geen kopie identiteitsbewijs)</label>
+                    <textarea id="verification-reference" name="verification_reference" maxlength="500" required></textarea>
+                    <button class="button button-outline" type="submit">Identiteit bevestigd: account koppelen</button>
+                  </form>
+                {% endif %}
                 <h2>4. Beheer</h2>
                 <form method="post">
                     {% csrf_token %}
