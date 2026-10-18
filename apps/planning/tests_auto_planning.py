@@ -4,7 +4,13 @@ from .application_planning import compatible_groups
 
 class CompatibilityTests(SimpleTestCase):
     def setUp(self):
-        self.group = SimpleNamespace(pk=5, course_id=2, season_id=3, starts_at='09:00')
+        self.group = SimpleNamespace(
+            pk=5,
+            course_id=2,
+            season_id=3,
+            starts_at='09:00',
+            execution_status='planned',
+        )
     def test_preference_is_required(self):
         app = SimpleNamespace(course_id=2, season_id=3, time_preferences={})
         self.assertEqual(compatible_groups(app, [self.group]), [])

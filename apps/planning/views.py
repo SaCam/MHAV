@@ -248,7 +248,11 @@ def public_application(request):
         if profile:
             for field in ('phone', 'street', 'house_number', 'postal_code', 'city'):
                 initial[field] = getattr(profile, field, '')
-    form = CourseApplicationForm(request.POST or None, initial=initial if request.method != 'POST' else None)
+    form = CourseApplicationForm(
+        request.POST or None,
+        initial=initial if request.method != 'POST' else None,
+        applicant_user=request.user if request.user.is_authenticated else None,
+    )
     selected_course = request.POST.get('course') if request.method == 'POST' else request.GET.get('course')
     selected_season = request.POST.get('season') if request.method == 'POST' else request.GET.get('season')
     if selected_season and str(selected_season).isdigit() and request.method != 'POST':
@@ -513,8 +517,9 @@ def trainer_seasons(request):
 def trainer_availability(request, pk):
     season = get_object_or_404(Season, pk=pk)
     if trainer_availability_locked(season):
-        messages.error(request, 'De beschikbaarheid is vergrendeld omdat de cursusplanning is goedgekeurd of gestart.')
-        return redirect('planning:trainer_seasons')
+        raise Http404(
+            "De beschikbaarheid voor dit seizoen kan niet meer worden aangepast."
+        )
 
     response = TrainerSeasonAvailability.objects.filter(
         season=season, trainer=request.user
