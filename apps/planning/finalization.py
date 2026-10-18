@@ -10,29 +10,54 @@ def resolve_identity(app, *, create=False):
     email = app.email.strip().lower()
     if not email:
         return None, None, None, 'E-mailadres ontbreekt'
+    # An email supplied on a guest/admin form is not proof of account ownership.
+    # Only an already authenticated/verified application link can reuse an account.
     matches = list(User.objects.filter(email__iexact=email)[:2])
     if len(matches) > 1:
-        return None, None, None, 'Meerdere accounts met hetzelfde e-mailadres'
-    user = matches[0] if matches else None
-    if app.user_id and user and app.user_id != user.pk:
-        return None, None, None, 'Aanvraag is aan een ander account gekoppeld'
-    if app.user_id and not user:
-        return None, None, None, 'Accountkoppeling en e-mailadres komen niet overeen'
-    if user and (user.first_name and user.first_name.casefold().strip() != app.first_name.casefold().strip() or user.last_name and user.last_name.casefold().strip() != app.last_name.casefold().strip()):
+        return None, None, None, 'Meerdere accounts met hetzelfde e-mailadres; handmatige controle nodig'
+    existing = matches[0] if matches else None
+    if app.user_id:
+        user = app.user
+        if not user or user.email.strip().casefold() != email:
+            return None, None, None, 'Gekoppeld account en e-mailadres komen niet overeen'
+        if existing and existing.pk != user.pk:
+            return None, None, None, 'E-mailadres behoort bij een ander account'
+    elif existing:
+        return None, None, None, (
+            'E-mailadres hoort bij een bestaand MHAV-account. '
+            'Laat de cursist eerst de accountkoppeling verifiëren; '
+            'koppel niet automatisch op basis van e-mail.'
+        )
+    else:
+        user = None
+    if user and (
+        (user.first_name and user.first_name.casefold().strip() != app.first_name.casefold().strip())
+        or (user.last_name and user.last_name.casefold().strip() != app.last_name.casefold().strip())
+    ):
         return None, None, None, 'Naam wijkt af van bestaand account; controleer identiteit'
     if not user and create:
-        user = User(username='mhav_'+uuid4().hex[:24], email=email, first_name=app.first_name, last_name=app.last_name)
+        user = User(username='mhav_'+uuid4().hex[:24], email=email,
+                    first_name=app.first_name, last_name=app.last_name)
         user.set_unusable_password()
         user.save()
     if not app.dog_name.strip():
         return user, None, None, 'Naam hond ontbreekt'
     dog = None
     combo = None
+    if app.dog_profile_id and not app.user_id:
+        return user, None, None, 'Hondenprofiel is niet gekoppeld aan een geverifieerd account'
+    if app.dog_profile_id and user and not Combination.objects.filter(
+        handler=user, dog_id=app.dog_profile_id
+    ).exists():
+        return user, None, None, 'Geselecteerde hond hoort niet bij dit account'
     if app.linked_combination_id:
         combo = app.linked_combination
         if user and combo.handler_id != user.pk:
             return user, None, None, 'Gekoppelde combinatie hoort bij ander account'
         dog = combo.dog
+    elif app.dog_profile_id and user:
+        dog = app.dog_profile
+        combo = Combination.objects.filter(handler=user, dog=dog).first()
     elif user:
         candidates = list(Combination.objects.filter(handler=user, dog__name__iexact=app.dog_name.strip()).select_related('dog'))
         if app.dog_birth_date:
