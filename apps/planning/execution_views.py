@@ -6,7 +6,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import TrainingGroup, Enrollment, Season, LessonRecord
+from .models import TrainingGroup, Enrollment, Season, LessonRecord, CourseApplication
 
 
 def _admin(user):
@@ -42,6 +42,15 @@ def execution_detail(request, pk):
     group = get_object_or_404(TrainingGroup.objects.select_related('season','course','trainer'), pk=pk)
     _allowed(request.user, group)
     enrollments = list(group.enrollments.filter(status=Enrollment.Status.PLACED).select_related('combination__handler','combination__dog').order_by('created_at','pk'))
+    # A second handler is application-specific, not a separate dog enrollment.
+    # Never guess the handler from another enrollment for the same dog.
+    second_handlers = {}
+    for app in CourseApplication.objects.filter(
+        linked_enrollment__in=enrollments,
+    ).exclude(second_handler_name='').order_by('created_at', 'pk'):
+        second_handlers.setdefault(app.linked_enrollment_id, app.second_handler_name)
+    for enrollment in enrollments:
+        enrollment.second_handler_display = second_handlers.get(enrollment.pk, '')
     dates = group.scheduled_dates
     records = {(r.enrollment_id, r.lesson_date): r for r in LessonRecord.objects.filter(enrollment__in=enrollments)}
     lessons = [{'date': day, 'participants': [{'enrollment': e, 'record': records.get((e.pk, day))} for e in enrollments]} for day in dates]

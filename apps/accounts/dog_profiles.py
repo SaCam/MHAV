@@ -12,8 +12,14 @@ def ensure_application_dog(application):
         dog = application.dog_profile
     else:
         dog = Dog.objects.create(name=application.dog_name, breed=application.dog_breed, date_of_birth=application.dog_birth_date, notes=application.dog_notes)
-    Combination.objects.get_or_create(handler_id=application.user_id, dog=dog)
+    combination, _ = Combination.objects.get_or_create(handler_id=application.user_id, dog=dog)
+    changed = []
     if application.dog_profile_id != dog.pk:
         application.dog_profile = dog
-        application.save(update_fields=['dog_profile'])
+        changed.append('dog_profile')
+    if application.linked_combination_id != combination.pk:
+        application.linked_combination = combination
+        changed.append('linked_combination')
+    if changed:
+        application.save(update_fields=changed)
     return dog
