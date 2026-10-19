@@ -451,3 +451,15 @@ class RegistrationPaymentEvent(models.Model):
     new_status = models.CharField(max_length=12, blank=True)
     class Meta:
         ordering = ('-recorded_at', '-pk')
+
+
+class StripeCheckoutAttempt(models.Model):
+    payment = models.ForeignKey(RegistrationPayment, on_delete=models.PROTECT, related_name='stripe_attempts')
+    session_id = models.CharField(max_length=255, unique=True)
+    payment_intent_id = models.CharField(max_length=255, blank=True)
+    amount_cents = models.PositiveIntegerField()
+    currency = models.CharField(max_length=3, default='eur')
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    class Meta:
+        ordering = ('-created_at',)

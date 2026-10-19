@@ -17,6 +17,7 @@ urlpatterns = [
     path("inschrijven/email-bevestigen/<str:token>/", email_verification.verify_application_email, name="application_verify_email"),
     path("inschrijven/bevestiging-opnieuw/", email_verification.resend_application_verification, name="application_resend_verification"),
     path("inschrijven/account-uitnodiging/", planning_views.request_account_invite, name="application_account_invite"),
+    path("inschrijven/account-verifieren/<str:uidb64>/<str:token>/", planning_views.application_account_verify, name="application_account_verify"),
     path("inschrijven/account-activeren/<str:token>/", planning_views.application_account_claim, name="application_account_claim"),
     path("cursussen/beheer/", views.course_manage, name="course_manage"),
     path("cursussen/beheer/nieuw/", views.course_form, name="course_new"),

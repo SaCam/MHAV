@@ -177,7 +177,7 @@
 <p><strong>Cursusbedrag:</strong> {% if payment.amount_due is not None %}€ {{ payment.amount_due }}{% else %}Nog niet vastgesteld{% endif %} · <strong>Betaaltermijn:</strong> {{ payment.due_at|date:'d-m-Y' }}</p>
 {% if payment.status == 'paid' %}<div class="mhav-app-note">Betaald op {{ payment.paid_at|date:'d-m-Y H:i' }}. Vastgelegd door {{ payment.paid_by }}. Betaallink is niet beschikbaar.</div>
 {% elif payment.status == 'pending' %}
-<div class="mhav-app-note">De plaats is gereserveerd. Online betalen is nog niet beschikbaar; Stripe volgt in Phase 4C. Een beheerder kan de betaling registreren.</div>
+<div class="mhav-app-note">De plaats is gereserveerd. De cursist kan via Mijn MHAV online betalen zodra Stripe is geconfigureerd. Een beheerder kan ook een handmatige betaling registreren.</div>
 <form method="post" action="{% url 'planning:application_payment' application.pk %}">{% csrf_token %}
 <input type="hidden" name="action" value="amount"><label>Cursusbedrag (€)</label><input type="number" name="amount" min="0.01" max="9999999.99" step="0.01" value="{{ payment.amount_due|default_if_none:'' }}" required>
 <label>Toelichting (verplicht)</label><textarea name="note" required rows="2"></textarea><button class="button button-outline" type="submit">Bedrag vastleggen</button></form>

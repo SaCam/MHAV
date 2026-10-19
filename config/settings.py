@@ -184,3 +184,7 @@ AUTHENTICATION_BACKENDS = [
 
 # Optional mailbox for confirmed applications and declined admin invitations.
 MHAV_REGISTRATION_NOTIFICATION_EMAIL = os.getenv("MHAV_REGISTRATION_NOTIFICATION_EMAIL", "")
+
+# Stripe credentials (never commit live secrets).
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')

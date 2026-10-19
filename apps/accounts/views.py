@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
@@ -104,6 +105,7 @@ def dashboard(request):
         "my_dogs": Combination.objects.filter(handler=request.user).select_related("dog").order_by("dog__name"),
         "completed_enrollments": completed_enrollments,
         "my_applications": applications,
+        "stripe_checkout_enabled": bool(settings.STRIPE_SECRET_KEY),
         "profile": profile, "is_member": request.user.groups.filter(name='MHAV - Lid').exists(),
         "profile_complete": is_complete,
         "is_trainer": trainer_role,

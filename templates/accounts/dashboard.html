@@ -27,6 +27,9 @@
                         {% else %}<span class="mhav-application-state">Ontvangen</span>{% endif %}</div>
                         <p><strong>{{ application.course.title|default:'Cursus' }}</strong> · {{ application.season.name|default:'Seizoen nog niet bekend' }}</p>
                         <p>Aangevraagd op {{ application.created_at|date:'d-m-Y' }}</p>
+                        {% if application.linked_enrollment_id and application.payment.status == 'pending' and application.payment.amount_due and stripe_checkout_enabled %}
+                        <form method="post" action="{% url 'planning:stripe_checkout' application.pk %}">{% csrf_token %}<button type="submit" class="button">Betaal nu — € {{ application.payment.amount_due }}</button></form>
+                        {% endif %}
                         {% if application.linked_enrollment_id %}
                           {% with group=application.linked_enrollment.group %}
                           <div class="mhav-my-assignment">
@@ -41,7 +44,7 @@
                             <span>{{ group.starts_at|time:'H:i' }}–{{ group.ends_at|time:'H:i' }}</span>
                           </div>
                           {% endwith %}
-                        {% elif application.proposed_group_id %}<p>Er is een voorlopige indeling. Je ontvangt de definitieve lesgroep na verwerking.</p>
+                        {% elif application.proposed_group_id %}<p>Voorlopige lesgroep: <strong>{{ application.proposed_group.name }}</strong>. Je ontvangt de definitieve bevestiging na verwerking.</p>
                         {% else %}<p>De cursusadministratie behandelt je aanvraag.</p>{% endif %}
                     </article>
                 {% empty %}

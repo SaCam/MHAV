@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}Cursusbetaling | MHAV{% endblock %}
+{% block content %}<section class="section"><div class="container"><h1>Betaling cursusaanmelding</h1>
+<p>{{ application.course.title }} · {% if application.linked_enrollment_id %}{{ application.linked_enrollment.group.name }}{% endif %}</p>
+<p><strong>Bedrag: € {{ payment.amount_due }}</strong></p>
+<p>Referentie: {{ payment.reference }}</p>
+<form method="post">{% csrf_token %}<button class="button" type="submit">Veilig betalen via Stripe</button></form>
+<p>Al betaald? Dan is deze link niet meer bruikbaar.</p></div></section>{% endblock %}

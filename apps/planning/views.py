@@ -382,7 +382,7 @@ def request_account_invite(request):
 def application_account_claim(request, token):
     """Only possession of a recent emailed link authorizes account creation/linking."""
     from django.core import signing
-    from django.contrib.auth import get_user_model, login
+    from django.contrib.auth import get_user_model
     from django.contrib.auth.forms import SetPasswordForm
     from apps.accounts.models import MemberProfile
     from uuid import uuid4
@@ -443,14 +443,43 @@ def application_account_claim(request, token):
             user = User(username='mhav_'+uuid4().hex[:24], email=application.email,
                 first_name=application.first_name, last_name=application.last_name)
             user.set_password(form.cleaned_data['password1'])
+            user.is_active = False
             user.save()
             profile, _ = MemberProfile.objects.get_or_create(user=user)
             profile.phone = application.phone
             profile.save(update_fields=['phone'])
             CourseApplication.objects.filter(pk=pk, user__isnull=True).update(user=user)
-        login(request, user)
-        return redirect('accounts:dashboard')
+        from django.contrib.auth.tokens import default_token_generator
+        from django.utils.http import urlsafe_base64_encode
+        from django.utils.encoding import force_bytes
+        from .notifications import notify_after_commit
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        verify_token = default_token_generator.make_token(user)
+        verify_url = request.build_absolute_uri(reverse('website:application_account_verify', args=[uid, verify_token]))
+        notify_after_commit('MHAV - Activeer je Mijn MHAV-account',
+            f'Beste {application.first_name},\n\nBevestig je e-mailadres om je Mijn MHAV-account te activeren:\n{verify_url}\n\nJe cursusaanmelding bevestig je afzonderlijk via de aanmeldmail.\n\nMijn Hond Als Vriend', [application.email])
+        messages.success(request, 'Je account is aangemaakt maar nog niet actief. Controleer je e-mail om het te activeren.')
+        return redirect('accounts:login')
     return render(request, 'planning/application_account_claim.html', {'form': form})
+
+
+def application_account_verify(request, uidb64, token):
+    """Activate only after proving control of the email inbox; never log in automatically."""
+    from django.contrib.auth import get_user_model
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.http import urlsafe_base64_decode
+    from django.utils.encoding import force_str
+    try:
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+        user = get_user_model().objects.get(pk=user_id)
+    except (ValueError, TypeError, OverflowError, get_user_model().DoesNotExist):
+        raise Http404('Ongeldige activatielink.')
+    if not default_token_generator.check_token(user, token) or user.is_active:
+        raise Http404('Deze activatielink is ongeldig of al gebruikt.')
+    user.is_active = True
+    user.save(update_fields=['is_active'])
+    messages.success(request, 'Je e-mailadres is bevestigd. Je kunt nu inloggen op Mijn MHAV.')
+    return redirect('accounts:login')
 
 
 @user_passes_test(is_planner, login_url='accounts:login')

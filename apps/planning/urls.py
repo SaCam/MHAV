@@ -1,7 +1,11 @@
 from django.urls import path
-from . import views, execution_views, payment_views
+from . import views, execution_views, payment_views, stripe_views
 app_name='planning'
 urlpatterns=[
+    path('betalen/webhook/', stripe_views.webhook, name='stripe_webhook'),
+    path('betalen/resultaat/', stripe_views.result, name='stripe_result'),
+    path('betalen/gast/<str:token>/', stripe_views.guest_checkout, name='stripe_guest_checkout'),
+    path('betalen/<int:pk>/', stripe_views.checkout, name='stripe_checkout'),
     path('uitvoering/', execution_views.execution_list, name='execution_list'),
     path('uitvoering/<int:pk>/', execution_views.execution_detail, name='execution_detail'),
     path('uitvoering/<int:pk>/actie/', execution_views.execution_action, name='execution_action'),
