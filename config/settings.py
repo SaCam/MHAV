@@ -188,3 +188,6 @@ MHAV_REGISTRATION_NOTIFICATION_EMAIL = os.getenv("MHAV_REGISTRATION_NOTIFICATION
 # Stripe credentials (never commit live secrets).
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+
+# Absolute public origin for deadline reminder and cancellation links.
+MHAV_PUBLIC_BASE_URL = os.getenv("MHAV_PUBLIC_BASE_URL", "").rstrip("/")

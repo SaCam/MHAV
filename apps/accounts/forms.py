@@ -6,7 +6,37 @@ from .models import MemberProfile
 
 
 class EmailLoginForm(AuthenticationForm):
-    username = forms.CharField(label='E-mailadres of gebruikersnaam', max_length=254, widget=forms.TextInput(attrs={'autocomplete': 'username', 'autofocus': True}))
+    username = forms.CharField(
+        label='E-mailadres of gebruikersnaam',
+        max_length=254,
+        widget=forms.TextInput(attrs={'autocomplete': 'username', 'autofocus': True}),
+    )
+
+    def clean(self):
+        try:
+            return super().clean()
+        except forms.ValidationError:
+            identifier = (self.cleaned_data.get('username') or '').strip()
+            password = self.cleaned_data.get('password')
+            if identifier and password:
+                User = get_user_model()
+                matches = list(User._default_manager.filter(
+                    email__iexact=identifier,
+                ).exclude(email='')[:2])
+                if not matches:
+                    matches = list(User._default_manager.filter(
+                        username=identifier,
+                        email='',
+                    )[:2])
+                if len(matches) == 1:
+                    user = matches[0]
+                    if not user.is_active and user.check_password(password):
+                        raise forms.ValidationError(
+                            'Je account is nog niet geactiveerd. Controleer je '
+                            'e-mail en klik op de activatielink voordat je inlogt.',
+                            code='inactive',
+                        )
+            raise
 
 
 class RegistrationForm(UserCreationForm):

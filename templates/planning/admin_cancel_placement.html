@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Inschrijving annuleren | MHAV{% endblock %}
+
+{% block content %}
+<section class="page-intro">
+    <div class="container">
+        <span class="eyebrow">MHAV · BEHEER</span>
+        <h1>Definitieve inschrijving annuleren</h1>
+        <p>Controleer de gegevens voordat je de lesplaats vrijgeeft.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container" style="max-width: 760px;">
+        <div class="mhav-app-card">
+            <h2>{{ application.first_name }} {{ application.last_name }}</h2>
+            <p><strong>Hond:</strong> {{ application.dog_name }}</p>
+            <p><strong>Cursus:</strong> {{ application.course.title }}</p>
+            {% if enrollment %}
+                <p><strong>Lesgroep:</strong> {{ enrollment.group.name }}</p>
+                <p><strong>Seizoen:</strong> {{ enrollment.group.season }}</p>
+            {% endif %}
+            {% if payment %}
+                <p><strong>Betaling:</strong> {{ payment.get_status_display }}</p>
+                <p><strong>Bedrag:</strong> € {{ payment.amount_due|default_if_none:'—' }}</p>
+                {% if payment.status == 'paid' %}
+                    <p>
+                        <strong>Let op:</strong> deze betaling is ontvangen.
+                        Een eventuele terugbetaling moet afzonderlijk worden beoordeeld.
+                    </p>
+                {% endif %}
+            {% endif %}
+
+            {% if can_cancel %}
+                <form method="post">
+                    {% csrf_token %}
+                    <label for="cancel-reason">Reden</label>
+                    <select id="cancel-reason" name="reason" required>
+                        <option value="">Kies een reden</option>
+                        {% if payment and payment.status == 'pending' %}
+                            <option value="nonpayment">Niet betaald</option>
+                        {% endif %}
+                        <option value="participant">Annulering door cursist</option>
+                        <option value="administrative">Administratieve annulering</option>
+                    </select>
+
+                    <label for="cancel-note">Interne toelichting</label>
+                    <textarea
+                        id="cancel-note"
+                        name="note"
+                        rows="4"
+                        maxlength="2000"
+                        required
+                    ></textarea>
+
+                    <label>
+                        <input type="checkbox" name="confirm" value="yes" required>
+                        Ik bevestig dat deze inschrijving wordt geannuleerd
+                        en de plaats vrijkomt.
+                    </label>
+
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem;">
+                        <button class="button button-primary" type="submit">
+                            Annulering bevestigen
+                        </button>
+                        <a
+                            class="button button-outline"
+                            href="{% url 'planning:application_detail' application.pk %}"
+                        >
+                            Terug
+                        </a>
+                    </div>
+                </form>
+            {% else %}
+                <p>Deze inschrijving kan niet meer via dit scherm worden geannuleerd.</p>
+                <a
+                    class="button button-outline"
+                    href="{% url 'planning:application_detail' application.pk %}"
+                >
+                    Terug naar aanmelding
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

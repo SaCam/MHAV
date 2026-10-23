@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Financiën | MHAV{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mhav-finance.css' %}">
+{% endblock %}
+{% block content %}
+<section class="page-intro">
+    <div class="container"><a href="{% url 'accounts:beheer' %}">← Beheer</a>
+        <h1>Financiën</h1>
+        <p>Inzicht in cursusbetalingen, openstaande bedragen en tarieven per seizoen.</p>
+    </div>
+</section>
+<section class="section">
+    <div class="container mhav-finance">
+        <div class="mf-panel">
+            <h2>Betalingsoverzicht</h2>
+            <form class="mf-filter" method="get"><label>Seizoen<select name="season">
+                        <option value="">Alle seizoenen</option>
+                            {% for season in seasons %}
+                                <option value="{{ season.pk }}" {% if selected_season == season.pk|stringformat:'s' %} selected {% endif %}> {{ season }}</option>
+                            {% endfor %}
+                    </select></label><label>Status<select name="status">
+                        <option value="">Alle statussen</option>
+                            {% for key,label in status_choices %}
+                                <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                    </select></label><label>Van<input type="date" name="start"
+                        value="{{ start }}"></label><label>Tot<input type="date" name="end"
+                        value="{{ end }}"></label><button class="button" type="submit">Filteren</button></form>
+            <div class="mf-stats">
+                <div class="mf-stat"><span>Ontvangen</span><strong>€ {{ paid_total|floatformat:2 }}</strong></div>
+                <div class="mf-stat"><span>Openstaand</span><strong>€ {{ pending_total|floatformat:2 }}</strong></div>
+                <div class="mf-stat"><span>Over tijd</span><strong>{{ overdue_count }}</strong></div>
+                <div class="mf-stat"><span>Geannuleerd</span><strong>{{ cancelled_count }}</strong></div>
+                <div class="mf-stat"><span>Terugbetaling beoordelen</span><strong>{{ refund_review_count }}</strong>
+                </div>
+            </div>
+            <div class="mf-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cursist</th>
+                            <th>Cursus</th>
+                            <th>Bedrag</th>
+                            <th>Vervaldatum</th>
+                            <th>Status</th>
+                            <th>Actie</th>
+                        </tr>
+                    </thead>
+                    <tbody>{% for row in payment_rows %}<tr>
+                            <td>{{ row.payment.application.first_name }} {{ row.payment.application.last_name }}</td>
+                            <td>{{ row.payment.application.course.title }}</td>
+                            <td>€ {{ row.payment.amount_due|default_if_none:'—' }}</td>
+                            <td>{{ row.payment.due_at|date:'d-m-Y'|default:'—' }}</td>
+                            <td><span
+                                    class="mf-badge {% if row.review %}mf-badge--review{% elif row.cancelled %}mf-badge--cancel{% elif row.payment.status == 'pending' %}mf-badge--warning{% endif %}">{{ row.label }}</span></td>
+                            <td><a
+                                    href="{% url 'planning:application_detail' row.payment.application_id %}">Bekijken</a>
+                            </td>
+                        </tr>{% empty %}<tr>
+                            <td colspan="6">Geen betalingen gevonden.</td>
+                        </tr>{% endfor %}</tbody>
+                </table>
+            </div>
+        </div>
+        <div class="mf-panel">
+            <h2>Cursusprijzen en betaaltermijnen</h2>
+            <p>Deze instellingen gelden voor nieuwe betalingen; bestaande verplichtingen blijven ongewijzigd.</p>
+            <div class="mf-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aanbod</th>
+                            <th>Prijs (€)</th>
+                            <th>Betaaltermijn (dagen)</th>
+                            <th>Respijtperiode (dagen)</th>
+                            <th>Actie</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for offering in offerings %}
+                            <tr>
+                                <td>
+                                    {{ offering.course.title }}
+                                    <br>
+                                    <small>{{ offering.season }}</small>
+
+                                    <form
+                                        id="offering-form-{{ offering.pk }}"
+                                        method="post"
+                                        action="{% url 'planning:finance_offering_settings' offering.pk %}"
+                                    >
+                                        {% csrf_token %}
+                                    </form>
+                                </td>
+
+                                <td>
+                                    <input
+                                        form="offering-form-{{ offering.pk }}"
+                                        aria-label="Prijs in euro"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        name="price"
+                                        value="{{ offering.course_price|default_if_none:'' }}"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        form="offering-form-{{ offering.pk }}"
+                                        aria-label="Betaaltermijn in dagen"
+                                        type="number"
+                                        min="1"
+                                        max="365"
+                                        name="term"
+                                        value="{{ offering.payment_term_days }}"
+                                    >
+                                </td>
+
+                                <td>
+                                    <input
+                                        form="offering-form-{{ offering.pk }}"
+                                        aria-label="Respijtperiode in dagen"
+                                        type="number"
+                                        min="0"
+                                        max="60"
+                                        name="grace"
+                                        value="{{ offering.grace_period_days }}"
+                                    >
+                                </td>
+
+                                <td>
+                                    <button
+                                        form="offering-form-{{ offering.pk }}"
+                                        class="button"
+                                        type="submit"
+                                    >
+                                        Opslaan
+                                    </button>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5">
+                                    Geen cursusaanbod gevonden.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p><small>Stripe-kosten worden pas getoond wanneer de daadwerkelijke transactiekosten beschikbaar
+                    zijn.</small></p>
+        </div>
+    </div>
+</section>
+{% endblock %}

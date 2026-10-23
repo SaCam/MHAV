@@ -9,14 +9,14 @@ def compatible_groups(application, groups):
     preferences = application.time_preferences or {}
     choices = []
     for group in groups:
-        if group.execution_status != 'planned' or group.course_id != application.course_id or (application.season_id is not None and group.season_id != application.season_id):
+        if group.execution_status != 'planned' or group.course_id != application.course_id or ((application.season_id or application.requested_season_id) is not None and group.season_id != (application.season_id or application.requested_season_id)):
             continue
         preference = preferences.get(str(group.pk), '')
         # No explicit response is NOT consent to a different lesson time.
         if preference not in ('preferred', 'ok'):
             # Open applications did not select a season/group, so offer an
             # explicitly reviewable proposal instead of assuming a preference.
-            if application.season_id is not None or preferences:
+            if application.season_id is not None or application.requested_season_id is not None or preferences:
                 continue
             choices.append((2, group))
             continue
@@ -52,7 +52,7 @@ def generate_proposals(season_id=None, course_id=None):
         proposed_group__isnull=True, linked_enrollment__isnull=True,
     )
     if season_id is not None:
-        applications_qs = applications_qs.filter(Q(season_id=season_id) | Q(season__isnull=True))
+        applications_qs = applications_qs.filter(Q(season_id=season_id) | Q(season__isnull=True, requested_season_id=season_id) | Q(season__isnull=True, requested_season__isnull=True))
     if course_id is not None:
         applications_qs = applications_qs.filter(course_id=course_id)
     applications = list(applications_qs.order_by('created_at', 'pk'))
@@ -80,12 +80,16 @@ def generate_proposals(season_id=None, course_id=None):
     placed = 0
     unplaced = 0
     for application in applications:
-        if application.season_id is None:
+        target_season_id = application.season_id or application.requested_season_id
+        if target_season_id is None:
             # An open application is only proposed for the explicitly selected
             # season. It is never silently claimed by a season-wide run.
             options = compatible_groups(application, group_map[(season_id, application.course_id)])
         else:
-            options = compatible_groups(application, group_map[(application.season_id, application.course_id)])
+            options = compatible_groups(application, group_map[(target_season_id, application.course_id)])
+        # A specifically requested season must never be silently changed.
+        if application.start_preference == CourseApplication.StartPreference.SPECIFIC and application.requested_season_id:
+            options = [(rank, group) for rank, group in options if group.season_id == application.requested_season_id]
         available = [(rank, group) for rank, group in options if remaining[group.pk] > 0]
         if not available:
             unplaced += 1

@@ -33,7 +33,7 @@ def guest_checkout(request, token):
     application = get_object_or_404(CourseApplication, pk=pk)
     if request.method == 'GET':
         payment = getattr(application, 'payment', None)
-        if not payment or payment.status != RegistrationPayment.Status.PENDING or not payment.amount_due:
+        if not payment or payment.status != RegistrationPayment.Status.PENDING or payment.cancelled_at or not payment.amount_due:
             return HttpResponse('Deze betaling is niet (meer) beschikbaar.')
         from django.shortcuts import render
         return render(request, 'planning/guest_payment.html', {'application': application, 'payment': payment, 'token': token})
@@ -56,7 +56,7 @@ def _start_checkout(request, application, redirect_target='accounts:dashboard'):
         if application.status != CourseApplication.Status.PROCESSED or not application.linked_enrollment_id:
             return HttpResponseBadRequest('Geen definitieve plaatsing.')
         payment = get_object_or_404(RegistrationPayment.objects.select_for_update(), application=application)
-        if payment.status != RegistrationPayment.Status.PENDING or not payment.amount_due or payment.amount_due <= 0:
+        if payment.status != RegistrationPayment.Status.PENDING or payment.cancelled_at or not payment.amount_due or payment.amount_due <= 0:
             messages.info(request, 'Deze betaling is niet meer beschikbaar.')
             return redirect(redirect_target)
         cents = int(payment.amount_due * 100)
@@ -108,7 +108,7 @@ def webhook(request):
             logger.error('Stripe payment verification mismatch: %s', attempt.session_id)
             return HttpResponse(status=200)
         intent = session.get('payment_intent') or ''
-        if payment.status != RegistrationPayment.Status.PENDING or payment.amount_due is None or int(payment.amount_due * 100) != attempt.amount_cents:
+        if payment.status != RegistrationPayment.Status.PENDING or payment.cancelled_at or payment.amount_due is None or int(payment.amount_due * 100) != attempt.amount_cents:
             logger.error('Paid Stripe session %s needs reconciliation: local payment already settled or amount changed', attempt.session_id)
             RegistrationPaymentEvent.objects.get_or_create(payment=payment, action='stripe_reconcile', note=f'Stripe sessie {attempt.session_id} betaald; controleer handmatig op mogelijke dubbele betaling.')
             return HttpResponse(status=200)

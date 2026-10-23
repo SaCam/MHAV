@@ -1,7 +1,13 @@
 from django.urls import path
-from . import views, execution_views, payment_views, stripe_views
+from . import views, execution_views, payment_views, stripe_views, payment_deadline_views, finance_views, admin_cancellation
 app_name='planning'
 urlpatterns=[
+    path('aanmeldingen/<int:pk>/annuleren/', admin_cancellation.cancel_placement, name='admin_cancel_placement'),
+    path('financien/', finance_views.dashboard, name='finance_dashboard'),
+    path('financien/lesgroep/<int:pk>/aanvullen/', finance_views.fill_vacancy, name='finance_fill_vacancy'),
+    path('financien/aanbod/<int:pk>/', finance_views.offering_settings, name='finance_offering_settings'),
+    path('betalen/afwijzen/<str:token>/', payment_deadline_views.decline, name='payment_decline'),
+    path('aanmeldingen/<int:pk>/betaling/beheren/', payment_deadline_views.manage, name='payment_deadline_manage'),
     path('betalen/webhook/', stripe_views.webhook, name='stripe_webhook'),
     path('betalen/resultaat/', stripe_views.result, name='stripe_result'),
     path('betalen/gast/<str:token>/', stripe_views.guest_checkout, name='stripe_guest_checkout'),

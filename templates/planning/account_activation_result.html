@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Accountactivatie | MHAV
+{% endblock %}
+
+{% block content %}
+    <section class="section">
+        <div class="container" style="max-width: 680px;">
+            {% if already_active %}
+                <h1>Account al geactiveerd</h1>
+                <p>
+                    Als je account al geactiveerd is, kun je inloggen.
+                    Je hoeft deze activatielink niet opnieuw te gebruiken.
+                </p>
+            {% else %}
+                <h1>Activatielink niet geldig</h1>
+                <p>
+                    Deze link is ongeldig of verlopen. Neem contact op met MHAV
+                    als je je account niet kunt activeren.
+                </p>
+            {% endif %}
+            <a class="button button-primary" href="{% url 'accounts:login' %}">
+                Naar inloggen
+            </a>
+        </div>
+    </section>
+{% endblock %}

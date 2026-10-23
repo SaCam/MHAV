@@ -9,6 +9,7 @@ from .views import is_planner
 from .payments import ensure_payment
 from .notifications import notify_after_commit
 from .payment_emails import payment_received_body
+from .payment_lifecycle import withdrawal_signer
 
 
 @require_POST
@@ -31,7 +32,7 @@ def payment_action(request, pk):
                 actor=request.user, note=note, old_status=payment.status, new_status=payment.status)
             messages.success(request, 'Betalingsregistratie beschikbaar.')
             return redirect('planning:application_detail', pk=pk)
-        if payment.status != RegistrationPayment.Status.PENDING:
+        if payment.status != RegistrationPayment.Status.PENDING or payment.cancelled_at:
             messages.error(request, 'Deze betaling is al afgehandeld en kan niet opnieuw worden verwerkt.')
             return redirect('planning:application_detail', pk=pk)
         old = payment.status
@@ -58,6 +59,7 @@ def payment_action(request, pk):
                     f'Lesgroep: {group.name}\nCursusbedrag: € {amount:.2f}\n'
                     f'Betaal vóór: {payment.due_at:%d-%m-%Y}\n\n'
                     f'Betaal veilig via deze persoonlijke link (14 dagen geldig):\n{pay_url}\n\n'
+                    f'Wil je de cursusplaats afwijzen? {request.build_absolute_uri(reverse("planning:payment_decline", args=[withdrawal_signer().sign(str(application.pk))]))}\n\n'
                     'Heb je al betaald? Neem dan contact op met MHAV.\n\nMijn Hond Als Vriend',
                     [application.email])
         elif action == 'paid':

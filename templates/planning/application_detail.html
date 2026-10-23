@@ -169,6 +169,19 @@
 {% endif %}
 </section>
 
+{% if application.linked_enrollment_id and application.linked_enrollment.status == 'placed' %}
+<section class="mhav-app-card">
+    <h2>Definitieve inschrijving</h2>
+    <p>Deze deelnemer heeft een definitieve plaats in een lesgroep.</p>
+    <a
+        class="button button-outline"
+        href="{% url 'planning:admin_cancel_placement' application.pk %}"
+    >
+        Inschrijving annuleren
+    </a>
+</section>
+{% endif %}
+
 <section class="mhav-app-card" aria-labelledby="payment-heading">
 <h2 id="payment-heading">4. Betaling</h2>
 {% if application.linked_enrollment_id %}
@@ -187,6 +200,10 @@
 <button class="button button-primary" type="submit">Betaling als ontvangen registreren</button></form>
 <div class="mhav-app-note">Gevolg: betalingsstatus wordt Betaald, wijziging wordt gelogd en de cursist krijgt een bevestigingsmail. Er is geen online betaallink beschikbaar.</div>
 {% endif %}
+{% if payment.status == 'pending' and not payment.cancelled_at %}
+<h3>Betaaltermijn en communicatie</h3><form method="post" action="{% url 'planning:payment_deadline_manage' application.pk %}">{% csrf_token %}<input type="hidden" name="action" value="deadline"><label>Nieuwe betaaldatum</label><input type="date" name="due_date" value="{{ payment.due_at|date:'Y-m-d' }}" required><label>Toelichting</label><textarea name="note" required></textarea><button class="button" type="submit">Betaaltermijn wijzigen</button></form>
+<form method="post" action="{% url 'planning:payment_deadline_manage' application.pk %}">{% csrf_token %}<input type="hidden" name="action" value="resend"><label>Toelichting</label><textarea name="note" required></textarea><button class="button" type="submit">Betalingsverzoek opnieuw versturen</button></form>
+{% elif payment.cancelled_at %}<p><strong>Geannuleerd:</strong> {{ payment.cancelled_at|date:'d-m-Y H:i' }} ({{ payment.cancellation_reason }})</p>{% endif %}
 <details><summary>Betalingshistorie</summary><ul>{% for event in payment.events.all %}<li>{{ event.recorded_at|date:'d-m-Y H:i' }} — {{ event.action }} — {{ event.actor }}: {{ event.note }}</li>{% empty %}<li>Nog geen wijzigingen.</li>{% endfor %}</ul></details>
 {% else %}<p>De betalingsregistratie wordt aangemaakt bij de definitieve plaatsing. Voor oudere definitieve aanmeldingen kan de beheerder deze eenmalig initialiseren.</p>
 <form method="post" action="{% url 'planning:application_payment' application.pk %}">{% csrf_token %}<input type="hidden" name="action" value="initialize"><label>Toelichting</label><textarea name="note" required></textarea><button type="submit" class="button button-outline">Betalingsregistratie initialiseren</button></form>{% endif %}

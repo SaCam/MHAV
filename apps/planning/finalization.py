@@ -80,6 +80,14 @@ def resolve_identity(app, *, create=False):
 
 
 def inspect_application(app, group):
+    if not getattr(app, 'email_verified_at', None):
+        return 'E-mailadres niet geverifieerd; bevestig de aanmelding via e-mail of Mijn MHAV'
+    if not getattr(app, 'participant_confirmed_at', None):
+        return 'Aanmelding nog niet bevestigd door de cursist'
+    from .payments import payment_price_problem
+    price_problem = payment_price_problem(app, group)
+    if price_problem:
+        return price_problem
     if app.status in (app.Status.PENDING_CONFIRMATION, app.Status.DECLINED):
         return 'Aanmelding is nog niet door de cursist bevestigd of is afgewezen'
     if app.status == app.Status.REJECTED:

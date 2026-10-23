@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth import get_user_model
 from datetime import date
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from .models import Season, Dog, Combination, TrainingGroup, Enrollment, TrainerSeasonAvailability, LessonInstructorOverride
 from .forms import SeasonForm, DogForm, CombinationForm, TrainingGroupForm, EnrollmentForm, TrainerAvailabilityForm
 
@@ -41,6 +42,12 @@ def season_detail(request, pk):
 def group_detail(request,pk):
     group=get_object_or_404(TrainingGroup.objects.select_related('season','trainer'),pk=pk)
     enrollments=group.enrollments.select_related('combination__handler','combination__dog').all()
+    enrollment_applications = {
+        app.linked_enrollment_id: app.pk
+        for app in CourseApplication.objects.filter(linked_enrollment__group=group)
+    }
+    for enrollment in enrollments:
+        enrollment.application_pk = enrollment_applications.get(enrollment.pk)
     response = TrainerSeasonAvailability.objects.filter(season=group.season, trainer=group.trainer).first() if group.trainer_id else None
     overrides = {item.lesson_date: item for item in group.instructor_overrides.select_related('trainer')}
     lesson_rows = []
@@ -474,8 +481,16 @@ def application_account_verify(request, uidb64, token):
         user = get_user_model().objects.get(pk=user_id)
     except (ValueError, TypeError, OverflowError, get_user_model().DoesNotExist):
         raise Http404('Ongeldige activatielink.')
-    if not default_token_generator.check_token(user, token) or user.is_active:
-        raise Http404('Deze activatielink is ongeldig of al gebruikt.')
+    if user.is_active:
+        # Do not disclose whether a guessed user ID belongs to an active account.
+        # A previously activated account needs no further action.
+        return render(request, 'planning/account_activation_result.html', {
+            'already_active': True,
+        })
+    if not default_token_generator.check_token(user, token):
+        return render(request, 'planning/account_activation_result.html', {
+            'invalid_link': True,
+        }, status=400)
     user.is_active = True
     user.save(update_fields=['is_active'])
     messages.success(request, 'Je e-mailadres is bevestigd. Je kunt nu inloggen op Mijn MHAV.')
@@ -665,6 +680,8 @@ def application_detail(request, pk):
     can_confirm_placement = (
         application.proposed_group_id and not application.linked_enrollment_id
         and application.status not in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED, CourseApplication.Status.REJECTED, CourseApplication.Status.WAITLIST)
+        and application.email_verified_at is not None
+        and application.participant_confirmed_at is not None
         and placement_group_approved and not needs_season_consent
     )
     return render(request, 'planning/application_detail.html', {'payment': getattr(application, 'payment', None), 'application':application, 'form':form, 'can_handle': can_handle, 'can_reopen': can_reopen, 'eligible_groups':eligible, 'placement_group': placement_group, 'placement_state': placement_state, 'placement_group_approved': placement_group_approved, 'can_change_draft': can_change_draft, 'needs_season_consent': needs_season_consent, 'can_confirm_placement': can_confirm_placement, 'time_preference_rows':preferences, 'recommended_seasons': recommended_seasons, 'alternative_seasons': Season.objects.exclude(status=Season.Status.CLOSED).filter(course_offerings__course=application.course).distinct().order_by('starts_on'), 'combinations': []})
@@ -924,6 +941,11 @@ def application_plan_action(request):
                     continue
                 try:
                     with db_transaction.atomic():
+                        # Recheck under the write transaction; preview alone is not authorization.
+                        from .finalization import inspect_application
+                        problem = inspect_application(app, app.proposed_group)
+                        if problem:
+                            raise ValueError(problem)
                         user,dog,combo,problem=resolve_identity(app,create=True)
                         if problem:raise ValueError(problem)
                         g=app.proposed_group
@@ -943,11 +965,17 @@ def application_plan_action(request):
                         app.linked_enrollment=enrollment
                         app.proposed_group=None
                         app.status=CourseApplication.Status.PROCESSED
-                        app.save(update_fields=['user','linked_combination','linked_enrollment','proposed_group','status','updated_at'])
+                        app.save(update_fields=[
+                            'user', 'linked_combination', 'linked_enrollment',
+                            'proposed_group', 'status', 'updated_at',
+                        ])
+                        from .payments import ensure_payment, send_payment_request
+                        payment = ensure_payment(app)
+                        send_payment_request(request, app, g, payment)
                     completed+=1
                 except (ValueError, ValidationError) as exc:
                     problems.append(f'#{app.pk}: {exc}')
-            messages.success(request, f'{completed} aanvraag/aanvragen definitief verwerkt. Er zijn geen e-mails verzonden.')
+            messages.success(request, f'{completed} aanvraag/aanvragen definitief verwerkt. Betalingsverzoeken zijn ingepland voor verzending.')
             if problems:
                 messages.warning(request, f'{len(problems)} niet verwerkt: ' + '; '.join(problems[:12]))
         elif action == 'clear':
@@ -1269,8 +1297,8 @@ def application_confirm(request, pk):
     from django.db import transaction
     with transaction.atomic():
         application = get_object_or_404(CourseApplication.objects.select_for_update().select_related('proposed_group'), pk=pk)
-        if application.status in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED):
-            messages.error(request, 'Deze aanmelding is nog niet bevestigd door de cursist.')
+        if not application.email_verified_at or not application.participant_confirmed_at:
+            messages.error(request, 'De cursist moet de aanmelding eerst bevestigen via e-mail of Mijn MHAV.')
             return redirect('planning:application_detail', pk=pk)
         if application.status in (CourseApplication.Status.PENDING_CONFIRMATION, CourseApplication.Status.DECLINED):
             messages.error(request, 'Deze aanmelding is nog niet bevestigd door de cursist.')
@@ -1297,6 +1325,11 @@ def application_confirm(request, pk):
         if over_capacity and not application.capacity_override_by_id:
             messages.error(request, 'Lesgroep is inmiddels vol. Geen geregistreerde capaciteitsuitzondering.')
             return redirect('planning:application_detail', pk=pk)
+        from .payments import payment_price_problem
+        price_problem = payment_price_problem(application, group)
+        if price_problem:
+            messages.error(request, price_problem)
+            return redirect('planning:finance_dashboard')
         from .finalization import resolve_identity
         user, dog, combo, problem = resolve_identity(application, create=True)
         if problem or not combo:
@@ -1317,9 +1350,24 @@ def application_confirm(request, pk):
         application.linked_enrollment = enrollment
         application.proposed_group = None
         application.status = CourseApplication.Status.PROCESSED
-        application.save(update_fields=['user', 'dog_profile', 'linked_combination', 'linked_enrollment', 'proposed_group', 'status', 'updated_at'])
-    from .payments import ensure_payment
-    ensure_payment(application)
+        application.save(update_fields=[
+            'user', 'dog_profile', 'linked_combination', 'linked_enrollment',
+            'proposed_group', 'status', 'updated_at',
+        ])
+        from .payments import ensure_payment
+        payment = ensure_payment(application)
+    if payment.amount_due is not None and payment.amount_due > 0:
+        from django.urls import reverse
+        from .stripe_views import guest_payment_signer
+        from .notifications import notify_after_commit
+        token = guest_payment_signer().sign(str(application.pk))
+        pay_url = request.build_absolute_uri(reverse('planning:stripe_guest_checkout', args=[token]))
+        notify_after_commit('MHAV - Betalingsverzoek cursus',
+            f'Beste {application.first_name},\n\nJe bent definitief geplaatst in {group.name}.\n'
+            f'Cursus: {application.course.title}\nBedrag: € {payment.amount_due:.2f}\n'
+            f'Betaal vóór: {payment.due_at:%d-%m-%Y}\n\n'
+            f'Betaal via deze persoonlijke link:\n{pay_url}\n\nMijn Hond Als Vriend',
+            [application.email])
     from .notifications import placement_confirmed
     placement_confirmed(application, group)
     messages.success(request, 'Plaatsing bevestigd en aanvraag verwerkt.')

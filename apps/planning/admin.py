@@ -7,6 +7,7 @@ from django.utils.html import format_html
 from .models import (
     Season, Dog, Combination, TrainingGroup, LessonInstructorOverride,
     Enrollment, CourseApplication, TrainerSeasonAvailability, SeasonCourseOffering,
+    RegistrationPayment, RegistrationPaymentEvent, StripeCheckoutAttempt,
 )
 
 
@@ -108,7 +109,7 @@ class EnrollmentAdmin(admin.ModelAdmin):
 
 @admin.register(CourseApplication)
 class CourseApplicationAdmin(admin.ModelAdmin):
-    list_display = ('applicant', 'dog_name', 'course', 'season', 'status', 'proposed_group', 'linked_enrollment', 'created_at', 'planning_link')
+    list_display = ('id', 'applicant', 'dog_name', 'course', 'season', 'status', 'proposed_group', 'linked_enrollment', 'created_at', 'planning_link')
     list_filter = ('status', 'season', 'course', 'created_at')
     search_fields = ('first_name', 'middle_name', 'last_name', 'email', 'phone', 'dog_name', 'dog_breed')
     list_select_related = ('course', 'season', 'proposed_group', 'linked_enrollment')
@@ -134,7 +135,7 @@ class CourseApplicationAdmin(admin.ModelAdmin):
 
 @admin.register(SeasonCourseOffering)
 class SeasonCourseOfferingAdmin(admin.ModelAdmin):
-    list_display = ('season', 'course', 'approved', 'registration_open', 'registration_opens_at', 'registration_closes_at', 'waiting_list_enabled')
+    list_display = ('season', 'course', 'course_price', 'payment_term_days', 'grace_period_days', 'approved', 'registration_open', 'registration_opens_at', 'registration_closes_at', 'waiting_list_enabled')
     list_filter = ('season', 'approved', 'registration_open', 'waiting_list_enabled')
     search_fields = ('season__name', 'course__title')
     list_select_related = ('season', 'course')
@@ -144,6 +145,7 @@ class SeasonCourseOfferingAdmin(admin.ModelAdmin):
         ('Cursusaanbod', {'fields': ('season', 'course')}),
         ('Goedkeuring', {'fields': ('approved', 'coverage_override', 'override_reason', 'approved_by', 'approved_at', 'approval_signature')}),
         ('Inschrijving', {'fields': ('registration_open', 'registration_opens_at', 'registration_closes_at', 'waiting_list_enabled')}),
+        ('Financiën', {'fields': ('course_price', 'payment_term_days', 'grace_period_days')}),
     )
 
 
@@ -162,3 +164,76 @@ class LessonInstructorOverrideAdmin(admin.ModelAdmin):
     list_filter = ('offline_confirmed', 'lesson_date', 'group__season')
     search_fields = ('group__name', 'trainer__username')
     list_select_related = ('group', 'trainer')
+
+
+class PaymentEventInline(admin.TabularInline):
+    model = RegistrationPaymentEvent
+    extra = 0
+    can_delete = False
+    fields = (
+        'recorded_at', 'action', 'old_status', 'new_status',
+        'actor', 'note',
+    )
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class StripeCheckoutAttemptInline(admin.TabularInline):
+    model = StripeCheckoutAttempt
+    extra = 0
+    can_delete = False
+    fields = (
+        'session_id', 'payment_intent_id', 'amount_cents',
+        'currency', 'created_at', 'completed_at',
+    )
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(RegistrationPayment)
+class RegistrationPaymentAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'reference', 'applicant', 'course', 'season',
+        'amount_due', 'status', 'due_at', 'paid_at', 'cancelled_at',
+    )
+    list_display_links = ('id', 'reference')
+    list_filter = ('status', 'application__season', 'application__course')
+    search_fields = (
+        '=id', 'reference', 'application__email',
+        'application__first_name', 'application__last_name',
+        'application__dog_name',
+    )
+    list_select_related = ('application__course', 'application__season')
+    readonly_fields = (
+        'id', 'application', 'reference', 'amount_due', 'currency',
+        'status', 'due_at', 'paid_at', 'reminder_sent_at',
+        'grace_notice_sent_at', 'cancelled_at', 'cancellation_reason',
+        'paid_by', 'method', 'note', 'created_at', 'updated_at',
+    )
+    inlines = (PaymentEventInline, StripeCheckoutAttemptInline)
+    ordering = ('-created_at',)
+    list_per_page = 50
+    date_hierarchy = 'created_at'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description='Cursist')
+    def applicant(self, obj):
+        app = obj.application
+        return ' '.join(filter(None, (app.first_name, app.last_name)))
+
+    @admin.display(description='Cursus')
+    def course(self, obj):
+        return obj.application.course
+
+    @admin.display(description='Seizoen')
+    def season(self, obj):
+        return obj.application.season

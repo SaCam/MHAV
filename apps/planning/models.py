@@ -331,6 +331,9 @@ class SeasonCourseOffering(models.Model):
     registration_opens_at = models.DateTimeField(null=True, blank=True)
     registration_closes_at = models.DateTimeField(null=True, blank=True)
     waiting_list_enabled = models.BooleanField('Wachtlijst toestaan', default=True)
+    course_price = models.DecimalField('Cursusprijs', max_digits=9, decimal_places=2, null=True, blank=True)
+    payment_term_days = models.PositiveSmallIntegerField('Betaaltermijn (dagen)', default=14)
+    grace_period_days = models.PositiveSmallIntegerField('Respijtperiode (dagen)', default=3)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=('season', 'course'), name='unique_mhav_season_course_offering')]
@@ -434,6 +437,10 @@ class RegistrationPayment(models.Model):
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
     due_at = models.DateTimeField(null=True, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
+    reminder_sent_at = models.DateTimeField(null=True, blank=True)
+    grace_notice_sent_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancellation_reason = models.CharField(max_length=32, blank=True)
     paid_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='mhav_payments_recorded')
     method = models.CharField(max_length=12, choices=Method.choices, blank=True)
     note = models.TextField('Toelichting betaling', blank=True)

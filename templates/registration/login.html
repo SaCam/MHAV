@@ -19,7 +19,9 @@
                 {% csrf_token %}
                 {% if form.errors %}
                     <p class="form-error">
-                        Controleer je e-mailadres of gebruikersnaam en wachtwoord.
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
                     </p>
                 {% endif %}
                 <div class="form-field">

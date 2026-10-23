@@ -5,7 +5,7 @@ from .models import CourseApplication, Enrollment, Season, TrainingGroup
 
 
 def build_insights(season_id=None, course_id=None, phase="planning"):
-    applications = CourseApplication.objects.select_related('course', 'season', 'proposed_group', 'linked_enrollment__group').exclude(
+    applications = CourseApplication.objects.select_related('course', 'season', 'proposed_group', 'linked_enrollment__group', 'payment').exclude(
         status=CourseApplication.Status.REJECTED)
     if season_id is not None:
         applications = applications.filter(Q(season_id=season_id) | Q(season__isnull=True, proposed_group__season_id=season_id) | Q(season__isnull=True, proposed_group__isnull=True, course_id__in=TrainingGroup.objects.filter(season_id=season_id).values('course_id')))
@@ -64,6 +64,7 @@ def build_insights(season_id=None, course_id=None, phase="planning"):
             counts['confirmed_' + (preference if preference in ('preferred', 'ok') else 'unknown')] += 1
         else:
             counts[outcome] += 1
+        app.payment_overview = (app.payment.get_status_display() if app.linked_enrollment_id and hasattr(app, 'payment') else '')
         app.quality_outcome = outcome
         app.quality_label = label
         app.planned_group_display = group

@@ -68,8 +68,8 @@
         <div class="gd-top">
             <p class="gd-muted">Hoofdinstructeur: <strong>{% if group.trainer %}{{ group.trainer.get_full_name|default:group.trainer.email }}{% else %}Nog niet toegewezen{% endif %}</strong></p>
             <div class="gd-actions">
-                <a class="button button-outline" href="{% url 'planning:group_edit' group.pk %}">Lesgroep bewerken</a>
-                <a class="button button-primary" href="{% url 'planning:new' 'enrollments' %}">+ Combinatie inplannen</a>
+                <a class="button button-primary" href="{% url 'planning:group_edit' group.pk %}">Lesgroep bewerken</a>
+                {% if group.planning_locked_at and group.execution_status == 'planned' and placed_count < group.capacity %}<a class="button button-outline" href="{% url 'planning:finance_fill_vacancy' group.pk %}">Vrije plek aanvullen</a>{% endif %}
             </div>
         </div>
         <div class="gd-stats" aria-label="Overzicht lesgroep">
@@ -169,6 +169,11 @@
                         <span>{{ enrollment.combination.handler.get_full_name|default:enrollment.combination.handler.email }}</span>
                         <span class="gd-muted">{{ enrollment.get_status_display }}</span>
                         <a href="{% url 'planning:edit' 'enrollments' enrollment.pk %}">Inschrijving bewerken →</a>
+                        {% if enrollment.status == 'placed' and enrollment.application_pk %}
+                            <a href="{% url 'planning:admin_cancel_placement' enrollment.application_pk %}">
+                                Inschrijving annuleren →
+                            </a>
+                        {% endif %}
                     </div>
                 {% empty %}
                     <p class="gd-empty">Er zijn nog geen combinaties ingeschreven.</p>

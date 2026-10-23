@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from .forms import ProfileForm, RegistrationForm, MemberDetailsForm
@@ -39,24 +38,35 @@ def register(request):
         initial = {'first_name': pending.first_name, 'last_name': pending.last_name, 'email': pending.email}
     form = RegistrationForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
-        # A new account can claim only the application from the same browser session.
-        # The email is not verified until an email-verification feature is added.
+        # Email ownership must be verified before login or account access.
         from django.db import transaction
+        from django.contrib.auth.tokens import default_token_generator
+        from django.utils.http import urlsafe_base64_encode
+        from django.utils.encoding import force_bytes
+        from django.urls import reverse
+        from apps.planning.notifications import notify_after_commit
         with transaction.atomic():
-            user = form.save()
-            if pending and user.email.strip().casefold() == pending.email.strip().casefold() and pending.user_id is None:
-                from apps.planning.models import CourseApplication
-                CourseApplication.objects.filter(pk=pending.pk, user__isnull=True).update(user=user)
-                profile = MemberProfile.objects.get(user=user)
-                for field in ('phone', 'street', 'house_number', 'postal_code', 'city'):
-                    setattr(profile, field, getattr(pending, field, '') or '')
-                profile.save()
-                pending.refresh_from_db()
-                from .dog_profiles import ensure_application_dog
-                ensure_application_dog(pending)
-        login(request, user)
-        _claim_pending_application(request)
-        return redirect("accounts:dashboard")
+            user = form.save(commit=False)
+            user.is_active = False
+            user.save()
+            MemberProfile.objects.get_or_create(user=user)
+            # Do not attach a pending application or dog before email verification.
+            # A user may link the application after signing in using the existing
+            # session-bound claim mechanism.
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            link = request.build_absolute_uri(reverse('website:application_account_verify', args=[uid, token]))
+            notify_after_commit(
+                'MHAV - Bevestig je e-mailadres',
+                f'Beste {user.first_name},\n\n'
+                f'Welkom bij Mijn MHAV! Bevestig je e-mailadres via deze link:\n{link}\n\n'
+                'Daarna kun je inloggen. Heb je ook een cursusaanmelding gedaan? '
+                'Bevestig die afzonderlijk via de aanmeldmail.\n\n'
+                'Heb je geen account aangemaakt? Dan kun je dit bericht negeren.\n\n'
+                'Mijn Hond Als Vriend',
+                [user.email],
+            )
+        return render(request, 'accounts/register_pending.html', {'email': user.email})
     return render(request, "accounts/register.html", {"form": form, "from_application": bool(pending)})
 
 

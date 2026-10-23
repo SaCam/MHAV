@@ -17,7 +17,7 @@
                 {% for application in my_applications %}
                     <article class="mhav-my-application">
                         <div class="mhav-my-application-top"><strong>{{ application.dog_name }}</strong>
-                        {% if application.linked_enrollment_id %}<span class="mhav-application-state is-final">Definitief ingeschreven</span>{% if application.payment %}<span class="mhav-application-state">Betaling: {{ application.payment.get_status_display }}</span>{% else %}<span class="mhav-application-state">Betaling nog niet ingericht</span>{% endif %}
+                        {% if application.payment.cancelled_at %}<span class="mhav-application-state">Geannuleerd</span>{% elif application.linked_enrollment_id %}<span class="mhav-application-state is-final">Definitief ingeschreven</span>{% if application.payment %}<span class="mhav-application-state">Betaling: {{ application.payment.get_status_display }}</span>{% else %}<span class="mhav-application-state">Betaling nog niet ingericht</span>{% endif %}
                         {% elif application.status == 'processed' %}<span class="mhav-application-state">Definitief geplaatst</span>{% if application.payment %}<span class="mhav-application-state">Betaling: {{ application.payment.get_status_display }}</span>{% else %}<span class="mhav-application-state">Betaling nog niet ingericht</span>{% endif %}
                         {% elif application.status == 'rejected' %}<span class="mhav-application-state">{% if application.closure_reason == 'withdrawn' %}Ingetrokken{% else %}Niet geplaatst{% endif %}</span>
                         {% elif application.status == 'waitlist' %}<span class="mhav-application-state">Op wachtlijst</span>
@@ -27,10 +27,13 @@
                         {% else %}<span class="mhav-application-state">Ontvangen</span>{% endif %}</div>
                         <p><strong>{{ application.course.title|default:'Cursus' }}</strong> · {{ application.season.name|default:'Seizoen nog niet bekend' }}</p>
                         <p>Aangevraagd op {{ application.created_at|date:'d-m-Y' }}</p>
-                        {% if application.linked_enrollment_id and application.payment.status == 'pending' and application.payment.amount_due and stripe_checkout_enabled %}
+                        {% if application.withdrawal_token and application.payment.status == 'pending' and not application.payment.cancelled_at %}
+                        <p>Betaal vóór {{ application.payment.due_at|date:'d-m-Y' }}. Wil je de cursusplaats niet gebruiken? <a href="{% url 'planning:payment_decline' application.withdrawal_token %}">Cursusplaats afwijzen</a>.</p>
+                        {% endif %}
+                        {% if application.linked_enrollment_id and application.payment.status == 'pending' and not application.payment.cancelled_at and application.payment.amount_due and stripe_checkout_enabled %}
                         <form method="post" action="{% url 'planning:stripe_checkout' application.pk %}">{% csrf_token %}<button type="submit" class="button">Betaal nu — € {{ application.payment.amount_due }}</button></form>
                         {% endif %}
-                        {% if application.linked_enrollment_id %}
+                        {% if application.linked_enrollment_id and not application.payment.cancelled_at %}
                           {% with group=application.linked_enrollment.group %}
                           <div class="mhav-my-assignment">
                             <strong>Jouw lesgroep: {{ group.name }}</strong>

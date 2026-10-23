@@ -25,6 +25,7 @@
                 {% endif %}
                 {% if can_manage_users %}
                     <a class="mhav-manage-card" href="{% url 'content:announcements_manage' %}"><span class="mhav-manage-icon">♧</span><h2>Mededelingen</h2><p>Publiceer belangrijke berichten voor alle bezoekers.</p><strong>Beheer mededelingen →</strong></a>
+                    <a class="mhav-manage-card" href="{% url 'planning:finance_dashboard' %}"><span class="mhav-manage-icon">€</span><h2>Financiën</h2><p>Betalingen, cursusprijzen en betaaltermijnen per seizoen.</p><strong>Open financiën →</strong></a>
                     <a class="mhav-manage-card" href="{% url 'planning:overview' %}"><span class="mhav-manage-icon">▦</span>
                     <h2>
                         Cursusadministratie
