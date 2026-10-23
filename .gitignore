@@ -1,10 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Development emails
+dev_emails/
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
 
+# Virtual environments
 venv/
 .venv/
-__pycache__/
-*.pyc
-media/
+
+# Local databases
+db.sqlite3
+
+# Generated files
 staticfiles/
+media/
